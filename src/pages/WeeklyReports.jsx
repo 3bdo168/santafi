@@ -3,12 +3,13 @@ import { useEffect, useState } from "react";
 import { db } from "../firebase";
 import { collection, onSnapshot, deleteDoc, doc } from "firebase/firestore";
 import { Link } from "react-router-dom";
+import { CLIENT } from "../client.config";
 
-const BRANCHES = [
-  { id: "mansoura", name: "المنصورة" },
-  { id: "mit_ghamr", name: "ميت غمر" },
-  { id: "zagazig", name: "الزقازيق" },
-];
+
+
+const BRANCHES = CLIENT.branches.map(b => ({ id: b.id, name: b.name }));
+
+
 
 const WeeklyReports = () => {
   const [reports, setReports] = useState([]);

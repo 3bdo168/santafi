@@ -6,9 +6,10 @@ import { collection, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
 import { useClientBranch } from "../context/ClientBranchContext";
 import { containerVariants, itemVariants, floatingVariants } from "../animations/motionVariants";
+import { CLIENT } from "../client.config";
 
-const LOGO_URL = "https://res.cloudinary.com/dkgiwnpfi/image/upload/v1774112719/Screenshot_2026-03-21_184621-removebg-preview_zzpxcw.png";
 
+const LOGO_URL = `https://res.cloudinary.com/${CLIENT.cloudinaryCloud}/image/upload/v1774112719/Screenshot_2026-03-21_184621-removebg-preview_zzpxcw.png`;
 const Home = () => {
   const navigate = useNavigate();
   const { selectedBranch } = useClientBranch();
@@ -19,7 +20,7 @@ const Home = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const branchId = selectedBranch?.id || "mansoura";
+       const branchId = selectedBranch?.id || CLIENT.branches[0].id;
         const snap = await getDocs(collection(db, branchId, "products", "data"));
         const all = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
         setNewProducts(all.filter((p) => p.isNew).slice(0, 4));

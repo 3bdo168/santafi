@@ -2,9 +2,9 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, Link } from "react-router-dom";
 import { useClientAuth } from "../context/ClientAuthContext";
+import { CLIENT } from "../client.config";
 
-const LOGO_URL =
-  "https://res.cloudinary.com/dkgiwnpfi/image/upload/v1774112719/Screenshot_2026-03-21_184621-removebg-preview_zzpxcw.png";
+const LOGO_URL = `https://res.cloudinary.com/${CLIENT.cloudinaryCloud}/image/upload/v1774112719/Screenshot_2026-03-21_184621-removebg-preview_zzpxcw.png`;
 
 const Login = () => {
   const navigate = useNavigate();
@@ -121,10 +121,10 @@ const Login = () => {
                 backgroundClip: "text",
               }}
             >
-              santafi
+              {CLIENT.name}
             </h1>
             <p className="text-gray-400 text-sm mt-1">
-              {mode === "login" ? "اهلاً بيك تاني! 👋" : "انضم لعيلة Santafi 🔥"}
+             {mode === "login" ? "اهلاً بيك تاني! 👋" : `انضم لعيلة ${CLIENT.name} 🔥`}
             </p>
           </div>
 

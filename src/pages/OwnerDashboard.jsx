@@ -7,12 +7,9 @@ import {
 } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { useNavigate, Link } from "react-router-dom";
+import { CLIENT } from "../client.config";
 
-const BRANCHES = [
-  { id: "mansoura", name: "المنصورة" },
-  { id: "mit_ghamr", name: "ميت غمر" },
-  { id: "zagazig", name: "الزقازيق" },
-];
+const BRANCHES = CLIENT.branches.map(b => ({ id: b.id, name: b.name }));
 
 const OwnerDashboard = () => {
   const navigate = useNavigate();
@@ -25,11 +22,10 @@ const OwnerDashboard = () => {
   const [showManualModal, setShowManualModal] = useState(false);
   const [manualForm, setManualForm] = useState({
     label: "",
-    mansoura: "", mit_ghamr: "", zagazig: "",
-    notes: ""
+    notes: "",
+    ...Object.fromEntries(CLIENT.branches.map(b => [b.id, ""]))
   });
 
-  // ── جيب الأوردرات (بس اللي مش archived) ──────────────────
   useEffect(() => {
     const unsubscribers = BRANCHES.map(({ id }) => {
       const ordersCol = collection(db, id, "orders", "data");
@@ -101,7 +97,6 @@ const OwnerDashboard = () => {
     } catch (err) { console.error(err); }
   };
 
-  // ── حفظ تقرير أسبوعي أوتوماتيك ──────────────────────────
   const handleSaveWeeklyReport = async () => {
     if (!window.confirm("هتحفظ تقرير الأسبوع وتعمل reset للداشبورد. متأكد؟")) return;
     setSaving(true);
@@ -110,7 +105,6 @@ const OwnerDashboard = () => {
       const reportId = `report_${now.getTime()}`;
       const label = `تقرير ${now.toLocaleDateString("ar-EG", { day: "numeric", month: "long", year: "numeric" })}`;
 
-      // snapshot البيانات
       const reportData = {
         label,
         createdAt: now.toISOString(),
@@ -134,10 +128,8 @@ const OwnerDashboard = () => {
         };
       });
 
-      // احفظ التقرير
       await setDoc(doc(db, "weeklyReports", "data", "reports", reportId), reportData);
 
-      // archive الأوردرات الحالية
       const batch = writeBatch(db);
       await Promise.all(
         BRANCHES.map(async ({ id }) => {
@@ -157,7 +149,6 @@ const OwnerDashboard = () => {
     setSaving(false);
   };
 
-  // ── حفظ تقرير يدوي ───────────────────────────────────────
   const handleSaveManual = async () => {
     if (!manualForm.label.trim()) { alert("اكتب اسم التقرير الأول"); return; }
     setSaving(true);
@@ -176,13 +167,14 @@ const OwnerDashboard = () => {
         topProduct: "—",
         topProductQty: 0,
         paymentStats: {},
-        branches: {
-          mansoura:  { name: "المنصورة", revenue: Number(manualForm.mansoura)  || 0, total: 0, delivered: 0 },
-          mit_ghamr: { name: "ميت غمر",  revenue: Number(manualForm.mit_ghamr) || 0, total: 0, delivered: 0 },
-          zagazig:   { name: "الزقازيق", revenue: Number(manualForm.zagazig)   || 0, total: 0, delivered: 0 },
-        },
+        branches: Object.fromEntries(
+          CLIENT.branches.map(b => [
+            b.id,
+            { name: b.name, revenue: Number(manualForm[b.id]) || 0, total: 0, delivered: 0 }
+          ])
+        ),
       });
-      setManualForm({ label: "", mansoura: "", mit_ghamr: "", zagazig: "", notes: "" });
+      setManualForm({ label: "", notes: "", ...Object.fromEntries(CLIENT.branches.map(b => [b.id, ""])) });
       setShowManualModal(false);
       alert("✅ تم حفظ التقرير اليدوي!");
     } catch (err) {
@@ -192,7 +184,6 @@ const OwnerDashboard = () => {
     setSaving(false);
   };
 
-  // ── Totals ────────────────────────────────────────────────
   const totalRevenue = Object.values(branchStats).reduce((s, b) => s + (b.revenue || 0), 0);
   const totalOrders = Object.values(branchStats).reduce((s, b) => s + (b.total || 0), 0);
   const totalPending = Object.values(branchStats).reduce((s, b) => s + (b.pending || 0), 0);
@@ -210,7 +201,6 @@ const OwnerDashboard = () => {
   return (
     <div className="min-h-screen bg-gray-900 text-white" dir="rtl">
 
-      {/* ── Header ── */}
       <div className="bg-gray-800 px-6 py-4 flex justify-between items-center sticky top-0 z-10 border-b border-gray-700">
         <div className="flex items-center gap-3">
           <span className="text-2xl">👑</span>
@@ -223,23 +213,13 @@ const OwnerDashboard = () => {
               <span className="text-orange-400 text-sm font-bold">{totalPending} انتظار</span>
             </div>
           )}
-          {/* زرار التقارير */}
           <Link to="/owner/reports" className="bg-blue-600 px-4 py-2 rounded-lg text-sm hover:bg-blue-500 transition-colors font-bold">
             📋 التقارير
           </Link>
-          {/* حفظ يدوي */}
-          <button
-            onClick={() => setShowManualModal(true)}
-            className="bg-purple-600 px-4 py-2 rounded-lg text-sm hover:bg-purple-500 transition-colors font-bold"
-          >
+          <button onClick={() => setShowManualModal(true)} className="bg-purple-600 px-4 py-2 rounded-lg text-sm hover:bg-purple-500 transition-colors font-bold">
             ✏️ تقرير يدوي
           </button>
-          {/* حفظ أوتو */}
-          <button
-            onClick={handleSaveWeeklyReport}
-            disabled={saving}
-            className="bg-green-600 px-4 py-2 rounded-lg text-sm hover:bg-green-500 transition-colors font-bold disabled:opacity-50"
-          >
+          <button onClick={handleSaveWeeklyReport} disabled={saving} className="bg-green-600 px-4 py-2 rounded-lg text-sm hover:bg-green-500 transition-colors font-bold disabled:opacity-50">
             {saving ? "⏳ جاري..." : "💾 حفظ الأسبوع"}
           </button>
           <button onClick={handleLogout} className="bg-red-600 px-4 py-2 rounded-lg text-sm hover:bg-red-500 transition-colors">
@@ -248,7 +228,6 @@ const OwnerDashboard = () => {
         </div>
       </div>
 
-      {/* ── Overall Stats ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6">
         <StatCard label="إجمالي الإيرادات" value={`${totalRevenue.toFixed(2)} ج`} color="border-yellow-500" textColor="text-yellow-400" />
         <StatCard label="إجمالي الأوردرات" value={totalOrders} color="border-blue-500" textColor="text-blue-400" />
@@ -256,7 +235,6 @@ const OwnerDashboard = () => {
         <StatCard label="نسبة الإتمام" value={`${completionRate}%`} color="border-green-500" textColor="text-green-400" />
       </div>
 
-      {/* ── Tabs ── */}
       <div className="px-6 mb-6">
         <div className="flex gap-2 bg-gray-800 p-1 rounded-xl w-fit">
           {[
@@ -276,7 +254,6 @@ const OwnerDashboard = () => {
 
       <div className="px-6 pb-10">
 
-        {/* Tab: نظرة عامة */}
         {activeTab === "overview" && (
           <div className="flex flex-col gap-6">
             {BRANCHES.map(({ id, name }) => {
@@ -325,7 +302,6 @@ const OwnerDashboard = () => {
           </div>
         )}
 
-        {/* Tab: المنتجات */}
         {activeTab === "products" && (
           <div className="flex flex-col gap-6">
             <div className="bg-gray-800 rounded-2xl p-5 border border-gray-700">
@@ -389,7 +365,6 @@ const OwnerDashboard = () => {
           </div>
         )}
 
-        {/* Tab: تحليلات */}
         {activeTab === "insights" && (
           <div className="flex flex-col gap-6">
             <div className="bg-gray-800 rounded-2xl p-5 border border-gray-700">
@@ -451,7 +426,6 @@ const OwnerDashboard = () => {
         )}
       </div>
 
-      {/* ── Modal: تقرير يدوي ── */}
       {showManualModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-gray-800 rounded-2xl p-6 w-full max-w-md border border-gray-700">
@@ -467,19 +441,15 @@ const OwnerDashboard = () => {
                 />
               </div>
               <div className="grid grid-cols-3 gap-3">
-                {[
-                  { key: "mansoura", label: "المنصورة" },
-                  { key: "mit_ghamr", label: "ميت غمر" },
-                  { key: "zagazig", label: "الزقازيق" },
-                ].map(({ key, label }) => (
-                  <div key={key}>
-                    <label className="text-gray-400 text-xs mb-1 block">{label} (ج)</label>
+                {CLIENT.branches.map((b) => (
+                  <div key={b.id}>
+                    <label className="text-gray-400 text-xs mb-1 block">{b.name} (ج)</label>
                     <input
                       type="number"
                       className="w-full bg-gray-700 border border-gray-600 rounded-xl px-3 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500"
                       placeholder="0"
-                      value={manualForm[key]}
-                      onChange={(e) => setManualForm((p) => ({ ...p, [key]: e.target.value }))}
+                      value={manualForm[b.id] || ""}
+                      onChange={(e) => setManualForm((p) => ({ ...p, [b.id]: e.target.value }))}
                     />
                   </div>
                 ))}
@@ -512,7 +482,6 @@ const OwnerDashboard = () => {
   );
 };
 
-// ── Sub-components ────────────────────────────────────────────
 const StatCard = ({ label, value, color, textColor }) => (
   <div className={`bg-gray-800 rounded-xl p-5 border-r-4 ${color} border border-gray-700`}>
     <p className="text-gray-400 text-sm">{label}</p>

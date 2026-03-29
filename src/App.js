@@ -15,11 +15,12 @@ import Checkout from "./pages/Checkout";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import OwnerDashboard from "./pages/OwnerDashboard";
-import WeeklyReports from "./pages/WeeklyReports"; // ✅ جديد
+import WeeklyReports from "./pages/WeeklyReports";
 import ProductDetails from "./pages/ProductDetails";
 import Login from "./pages/Login";
 import "./styles/globals.css";
 import Profile from "./pages/Profile";
+import { CLIENT } from "./client.config";
 
 function App() {
   const [cart, setCart] = useState([]);
@@ -63,30 +64,17 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/admin" element={<AdminLogin />} />
 
-              <Route
-                path="/admin/dashboard/mansoura"
-                element={
-                  <ProtectedRoute requiredRole="admin" requiredBranch="mansoura">
-                    <AdminDashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/dashboard/mit_ghamr"
-                element={
-                  <ProtectedRoute requiredRole="admin" requiredBranch="mit_ghamr">
-                    <AdminDashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/dashboard/zagazig"
-                element={
-                  <ProtectedRoute requiredRole="admin" requiredBranch="zagazig">
-                    <AdminDashboard />
-                  </ProtectedRoute>
-                }
-              />
+              {CLIENT.branches.map((branch) => (
+                <Route
+                  key={branch}
+                  path={`/admin/dashboard/${branch}`}
+                  element={
+                    <ProtectedRoute requiredRole="admin" requiredBranch={branch}>
+                      <AdminDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+              ))}
 
               <Route
                 path="/owner"
@@ -97,7 +85,6 @@ function App() {
                 }
               />
 
-              {/* ✅ التقارير الأسبوعية — محمية بـ owner */}
               <Route
                 path="/owner/reports"
                 element={

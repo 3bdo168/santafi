@@ -10,15 +10,12 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useBranch } from "../context/BranchContext";
 
-const CLOUDINARY_CLOUD = "dkgiwnpfi";
-const CLOUDINARY_PRESET = "santafi_products";
-const EMOJI_LIST = ["🍔","🍗","🍟","🌮","🌯","🍕","🥗","🍣","🥩","🍖","🌶️","🧆","🥙","🍱","🧁","🍰","🥤","☕","🧃","🍜"];
+import { CLIENT } from "../client.config";
+const CLOUDINARY_CLOUD = CLIENT.cloudinaryCloud;
+const CLOUDINARY_PRESET = CLIENT.cloudinaryPreset;
+const BRANCH_NAMES = Object.fro
 
-const BRANCH_NAMES = {
-  mansoura: "المنصورة",
-  mit_ghamr: "ميت غمر",
-  zagazig: "الزقازيق",
-};
+const EMOJI_LIST = ["🍔","🍗","🍟","🌮","🌯","🍕","🥗","🍣","🥩","🍖","🌶️","🧆","🥙","🍱","🧁","🍰","🥤","☕","🧃","🍜"];
 
 const playNotificationSound = () => {
   try {
@@ -423,7 +420,7 @@ const handleLogout = async () => {
         <div className="flex items-center gap-3">
           <span className="text-2xl">🔥</span>
           <div>
-            <h1 className="text-xl font-black gradient-text">Santafi Admin</h1>
+<h1 className="text-xl font-black gradient-text">{CLIENT.name} Admin</h1>
             <p className="text-xs text-gray-400">فرع {BRANCH_NAMES[branchId]}</p>
           </div>
         </div>

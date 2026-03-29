@@ -1,13 +1,36 @@
-// src/client.config.js
 export const CLIENT = {
   name: "Santafi",
+  appName: "Santafi | مطعم سنتافي",
   logo: "/logo.png",
-  primaryColor: "#your-color",
+  primaryColor: "#C8102E",
   cloudinaryCloud: "dkgiwnpfi",
   cloudinaryPreset: "santafi_products",
-  branches: ["mansoura", "mitghamr", "zagazig"],
   currency: "EGP",
   paymobEnabled: true,
   vodafoneEnabled: true,
   instaPayEnabled: true,
+  ownerBranch: "owner",
+  branches: [
+    {
+      id: "mansoura",
+      name: "فرع المنصورة",
+      area: "المنصورة، الدقهلية",
+      phone: "010-0000-0001",
+      hours: "11:00 ص – 12:00 ص",
+    },
+    {
+      id: "mit_ghamr",
+      name: "فرع ميت غمر",
+      area: "ميت غمر، الدقهلية",
+      phone: "010-0000-0002",
+      hours: "12:00 م – 1:00 ص",
+    },
+    {
+      id: "zagazig",
+      name: "فرع الزقازيق",
+      area: "الزقازيق، الشرقية",
+      phone: "010-0000-0003",
+      hours: "11:00 ص – 11:00 م",
+    },
+  ],
 }

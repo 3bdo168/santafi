@@ -1,33 +1,7 @@
-// src/context/ClientBranchContext.jsx
-// ✅ Context منفصل للكلايت - مش علاقتوش بـ Firebase Auth
 import { createContext, useContext, useState } from "react";
+import { CLIENT } from "../client.config";
 
-// ==========================================
-// 🔧 بيانات الفروع - عدّلها حسب اللي عندك
-// ==========================================
-export const BRANCHES = [
-  {
-    id: "mansoura",
-    name: "فرع المنصورة",
-    area: "المنصورة، الدقهلية",
-    phone: "010-0000-0001",
-    hours: "11:00 ص – 12:00 ص",
-  },
-  {
-    id: "mit_ghamr",
-    name: "فرع ميت غمر",
-    area: "ميت غمر، الدقهلية",
-    phone: "010-0000-0002",
-    hours: "12:00 م – 1:00 ص",
-  },
-  {
-    id: "zagazig",
-    name: "فرع الزقازيق",
-    area: "الزقازيق، الشرقية",
-    phone: "010-0000-0003",
-    hours: "11:00 ص – 11:00 م",
-  },
-];
+export const BRANCHES = CLIENT.branches;
 
 const ClientBranchContext = createContext();
 

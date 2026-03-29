@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { useClientAuth } from "../context/ClientAuthContext";
+import { CLIENT } from "../client.config";
 
 const Navbar = ({ totalItems = 0, onCartClick }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -30,11 +31,13 @@ const Navbar = ({ totalItems = 0, onCartClick }) => {
             className="flex items-center gap-2 cursor-pointer"
           >
             <img
-              src="https://res.cloudinary.com/dkgiwnpfi/image/upload/v1774112719/Screenshot_2026-03-21_184621-removebg-preview_zzpxcw.png"
+             src={`https://res.cloudinary.com/${CLIENT.cloudinaryCloud}/image/upload/v1774112719/Screenshot_2026-03-21_184621-removebg-preview_zzpxcw.png`}
+
               alt="santafi"
               className="w-10 h-10 object-contain"
             />
-            <span className="text-2xl font-bold gradient-text hidden sm:inline">santafi</span>
+            <span className="text-2xl font-bold gradient-text hidden sm:inline">{CLIENT.name}</span>
+
           </motion.div>
         </Link>
 
