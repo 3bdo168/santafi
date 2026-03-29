@@ -1,10 +1,16 @@
+// src/pages/Menu.jsx
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
+import { useClientBranch } from "../context/ClientBranchContext"; // ✅
 import CategorySection from "../components/CategorySection";
+import { useNavigate } from "react-router-dom";
 
 const Menu = ({ addToCart }) => {
+  const navigate = useNavigate();
+  const { selectedBranch } = useClientBranch(); // ✅ جيب الفرع المختار
+
   const [toast, setToast] = useState({ show: false, message: "", type: "success" });
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -13,22 +19,34 @@ const Menu = ({ addToCart }) => {
   const [activeCategory, setActiveCategory] = useState("all");
 
   useEffect(() => {
+    // ✅ لو مفيش فرع مختار، مترجعش - الـ guard تحت هيتعامل معاه
+    if (!selectedBranch?.id) {
+      setLoading(false);
+      return;
+    }
+
     const fetchData = async () => {
+      setLoading(true);
       try {
+        const branchId = selectedBranch.id;
+
+        // ✅ بيقرأ من /{branchId}/products/data و /{branchId}/categories/data
         const [productsSnap, categoriesSnap] = await Promise.all([
-          getDocs(collection(db, "products")),
-          getDocs(collection(db, "categories")),
+          getDocs(collection(db, branchId, "products", "data")),
+          getDocs(collection(db, branchId, "categories", "data")),
         ]);
+
         setProducts(productsSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
         setCategories(categoriesSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
       } catch (err) {
-        console.error(err);
+        console.error("Error fetching menu:", err);
       } finally {
         setLoading(false);
       }
     };
+
     fetchData();
-  }, []);
+  }, [selectedBranch?.id]); // ✅ بيعيد الـ fetch لو اتغير الفرع
 
   const handleAddToCart = (item) => {
     addToCart(item);
@@ -49,34 +67,63 @@ const Menu = ({ addToCart }) => {
     const matchSearch =
       p.name?.toLowerCase().includes(search.toLowerCase()) ||
       p.description?.toLowerCase().includes(search.toLowerCase());
-    const matchCategory = activeCategory === "all" || p.category === activeCategory;
+    const matchCategory =
+      activeCategory === "all" || p.category === activeCategory;
     return matchSearch && matchCategory;
   });
 
-  const getItemsBySlug = (slug) => filteredProducts.filter((p) => p.category === slug);
+  const getItemsBySlug = (slug) =>
+    filteredProducts.filter((p) => p.category === slug);
 
   const uncategorized = filteredProducts.filter(
     (p) => !p.category || !categories.find((c) => c.slug === p.category)
   );
 
+  // ── Guard: لو مفيش فرع مختار ────────────────────────────
+  if (!selectedBranch) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-dark-900 to-dark-800">
+        <div className="text-center">
+          <div className="text-6xl mb-4">🏪</div>
+          <p className="text-xl text-gray-400 mb-6">لم يتم اختيار الفرع!</p>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate("/")}
+            className="px-8 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold rounded-xl"
+          >
+            اختار الفرع
+          </motion.button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-dark-900 via-dark-800 to-dark-900">
+
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -50 }}
         animate={{ opacity: 1, y: 0 }}
         className="relative pt-20 pb-8 px-4 md:px-8 text-center"
       >
-        <div className="flex items-center justify-center gap-4 mb-6">
+        <div className="flex items-center justify-center gap-4 mb-4">
           <img
             src="https://res.cloudinary.com/dkgiwnpfi/image/upload/v1774112719/Screenshot_2026-03-21_184621-removebg-preview_zzpxcw.png"
-            alt="Santafi"
+            alt="santafi"
             className="w-16 h-16 object-contain"
           />
           <h1 className="text-5xl md:text-7xl font-black gradient-text">
             Our Premium Menu
           </h1>
         </div>
+
+        {/* ✅ بيظهر اسم الفرع تحت العنوان */}
+        <p className="text-gray-500 text-sm mb-2">
+          🏪 {selectedBranch.name}
+        </p>
+
         <p className="text-xl text-gray-300 max-w-2xl mx-auto">
           Discover our carefully crafted menu with the finest fast-food offerings
         </p>
@@ -90,6 +137,7 @@ const Menu = ({ addToCart }) => {
 
       {/* Search + Filter */}
       <div className="px-4 md:px-8 pb-8 max-w-7xl mx-auto">
+
         {/* Search Bar */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -117,7 +165,7 @@ const Menu = ({ addToCart }) => {
           )}
         </motion.div>
 
-        {/* Category Filter Buttons */}
+        {/* Category Filter */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

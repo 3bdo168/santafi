@@ -1,4 +1,4 @@
-# 🚀 SANTAFI - Setup & Run Guide
+# 🚀 santafi - Setup & Run Guide
 
 ## Quick Start
 

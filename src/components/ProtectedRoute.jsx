@@ -1,23 +1,30 @@
-import React, { useEffect, useState } from "react";
+// src/components/ProtectedRoute.jsx
 import { Navigate } from "react-router-dom";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "../firebase";
+import { useBranch } from "../context/BranchContext";
 
-const ProtectedRoute = ({ children }) => {
-  const [user, setUser] = useState(undefined);
+const ProtectedRoute = ({ children, requiredRole, requiredBranch }) => {
+  const { currentUser, role, branchId, loading } = useBranch();
 
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => setUser(u));
-    return () => unsub();
-  }, []);
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-red-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
-  if (user === undefined) return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="text-orange-400 text-2xl">Loading...</div>
-    </div>
-  );
+  // مش مسجل دخول
+  if (!currentUser) return <Navigate to="/admin" />;
 
-  return user ? children : <Navigate to="/admin" />;
+  // role غلط
+  if (requiredRole && role !== requiredRole) return <Navigate to="/admin" />;
+
+  // admin بيحاول يدخل على فرع مش بتاعه
+  if (role === "admin" && requiredBranch && branchId !== requiredBranch) {
+    return <Navigate to={`/admin/dashboard/${branchId}`} />;
+  }
+
+  return children;
 };
 
 export default ProtectedRoute;

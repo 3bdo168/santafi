@@ -460,5 +460,5 @@ The project is production-ready and can be deployed immediately after customizat
 ---
 
 *Last verified: March 19, 2026*  
-*Santafi Restaurant Web App v1.0*  
+*santafi Restaurant Web App v1.0*  
 *Built with React.js, Tailwind CSS, & Framer Motion* 🔥

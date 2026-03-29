@@ -1,4 +1,4 @@
-# 🔥 SANTAFI Restaurant - Complete Project Index
+# 🔥 santafi Restaurant - Complete Project Index
 
 ## Welcome! 👋
 
@@ -364,7 +364,7 @@ This project can be deployed to:
 - [ ] Run `npm install` (if not done)
 - [ ] Run `npm start`
 - [ ] Browser opens to localhost:3000
-- [ ] See Santafi branding
+- [ ] See santafi branding
 - [ ] Test hover effects on cards
 - [ ] Click "Add to Cart"
 - [ ] Navigate between Home and Menu
@@ -375,7 +375,7 @@ This project can be deployed to:
 
 | Property | Value |
 |----------|-------|
-| Project Name | Santafi Restaurant |
+| Project Name | santafi Restaurant |
 | Version | 1.0.0 |
 | Framework | React.js |
 | Type | CRA (Create React App) |
@@ -421,5 +421,5 @@ Everything is well-documented in the code with comments.
 
 **Happy coding!** 🚀
 
-*Santafi Restaurant Web App v1.0*  
+*santafi Restaurant Web App v1.0*  
 Built with ❤️ using React.js, Tailwind CSS & Framer Motion

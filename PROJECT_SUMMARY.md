@@ -1,4 +1,4 @@
-# 🔥 SANTAFI - Fast Food Restaurant Web App
+# 🔥 santafi - Fast Food Restaurant Web App
 ## Complete Project Implementation Summary
 
 ---
@@ -470,7 +470,7 @@ For questions or issues:
 
 ## 🎉 Summary
 
-**Your Santafi Restaurant web app is completely built and ready to use!**
+**Your santafi Restaurant web app is completely built and ready to use!**
 
 - 14 source files created
 - All dependencies installed

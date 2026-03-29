@@ -414,7 +414,7 @@ Check online resources:
 You'll know it's working when you see:
 1. ✅ "Compiled successfully!" message
 2. ✅ Browser automatically opens to localhost:3000
-3. ✅ Page shows your Santafi restaurant name
+3. ✅ Page shows your santafi restaurant name
 4. ✅ Orange fire-themed design visible
 5. ✅ No red error messages in terminal
 
@@ -469,4 +469,4 @@ You'll know it's working when you see:
 ---
 
 *Last Updated: March 19, 2026*  
-*Santafi Restaurant Installation Guide v1.0*
+*santafi Restaurant Installation Guide v1.0*
