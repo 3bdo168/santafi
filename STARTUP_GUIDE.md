@@ -1,4 +1,4 @@
-# 🚀 SANTAFI - Setup & Run Guide
+# 🚀 santafe - Setup & Run Guide
 
 ## Quick Start
 
@@ -9,7 +9,7 @@ The project has been created with all necessary files and configurations. Howeve
 Sometimes Windows PowerShell has issues with npm. Try using Command Prompt instead:
 
 ```cmd
-cd F:\santafi0.1
+cd F:\santafe0.1
 npm install
 npm start
 ```
@@ -19,7 +19,7 @@ npm start
 If you have Git Bash installed:
 
 ```bash
-cd /f/santafi0.1
+cd /f/santafe0.1
 npm install
 npm start
 ```
@@ -29,7 +29,7 @@ npm start
 If npm scripts don't work, invoke Node directly:
 
 ```cmd
-cd F:\santafi0.1
+cd F:\santafe0.1
 node node_modules/react-scripts/bin/react-scripts.js start
 ```
 
@@ -38,7 +38,7 @@ node node_modules/react-scripts/bin/react-scripts.js start
 If you still have issues:
 
 ```cmd
-cd F:\santafi0.1
+cd F:\santafe0.1
 npm cache clean --force
 del node_modules /s /q
 del package-lock.json
@@ -60,7 +60,7 @@ npm start
 
 ### File Structure Created
 ```
-f:\santafi0.1\
+f:\santafe0.1\
 ├── public/
 │   ├── index.html
 │   └── favicon.ico

@@ -1,10 +1,17 @@
+// src/pages/Menu.jsx
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "../firebase";
+import { useClientBranch } from "../context/ClientBranchContext";
+import { useCart } from "../context/CartContext";
+import { getBranchMenuData } from "../services/productsService";
 import CategorySection from "../components/CategorySection";
+import { useNavigate } from "react-router-dom";
 
-const Menu = ({ addToCart }) => {
+const Menu = () => {
+  const navigate = useNavigate();
+  const { selectedBranch } = useClientBranch();
+  const { addToCart } = useCart();
+
   const [toast, setToast] = useState({ show: false, message: "", type: "success" });
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -13,22 +20,47 @@ const Menu = ({ addToCart }) => {
   const [activeCategory, setActiveCategory] = useState("all");
 
   useEffect(() => {
+    if (!selectedBranch?.id) {
+      setLoading(false);
+      return;
+    }
+
     const fetchData = async () => {
+      setLoading(true);
+
+      // ✅ جرب تجيب من الـ cache الأول
+      const cacheKey = `menu_${selectedBranch.id}`;
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        const { products: cachedProducts, categories: cachedCategories } = JSON.parse(cached);
+        setProducts(cachedProducts);
+        setCategories(cachedCategories);
+        setLoading(false);
+        return;
+      }
+
       try {
-        const [productsSnap, categoriesSnap] = await Promise.all([
-          getDocs(collection(db, "products")),
-          getDocs(collection(db, "categories")),
-        ]);
-        setProducts(productsSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
-        setCategories(categoriesSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
+        const branchId = selectedBranch.id;
+        const { products: fetchedProducts, categories: fetchedCategories } =
+          await getBranchMenuData(branchId);
+
+        // ✅ احفظ في sessionStorage عشان المرة الجاية تكون سريعة
+        sessionStorage.setItem(cacheKey, JSON.stringify({
+          products: fetchedProducts,
+          categories: fetchedCategories,
+        }));
+
+        setProducts(fetchedProducts);
+        setCategories(fetchedCategories);
       } catch (err) {
-        console.error(err);
+        console.error("Error fetching menu:", err);
       } finally {
         setLoading(false);
       }
     };
+
     fetchData();
-  }, []);
+  }, [selectedBranch?.id]);
 
   const handleAddToCart = (item) => {
     addToCart(item);
@@ -49,34 +81,60 @@ const Menu = ({ addToCart }) => {
     const matchSearch =
       p.name?.toLowerCase().includes(search.toLowerCase()) ||
       p.description?.toLowerCase().includes(search.toLowerCase());
-    const matchCategory = activeCategory === "all" || p.category === activeCategory;
+    const matchCategory =
+      activeCategory === "all" || p.category === activeCategory;
     return matchSearch && matchCategory;
   });
 
-  const getItemsBySlug = (slug) => filteredProducts.filter((p) => p.category === slug);
+  const getItemsBySlug = (slug) =>
+    filteredProducts.filter((p) => p.category === slug);
 
   const uncategorized = filteredProducts.filter(
     (p) => !p.category || !categories.find((c) => c.slug === p.category)
   );
 
+  // ── Guard ────────────────────────────
+  if (!selectedBranch) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-dark-900 to-dark-800">
+        <div className="text-center">
+          <div className="text-6xl mb-4">🏪</div>
+          <p className="text-xl text-gray-400 mb-6">لم يتم اختيار الفرع!</p>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate("/")}
+            className="px-8 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold rounded-xl"
+          >
+            اختار الفرع
+          </motion.button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-dark-900 via-dark-800 to-dark-900">
+
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -50 }}
         animate={{ opacity: 1, y: 0 }}
         className="relative pt-20 pb-8 px-4 md:px-8 text-center"
       >
-        <div className="flex items-center justify-center gap-4 mb-6">
+        <div className="flex items-center justify-center gap-4 mb-4">
           <img
             src="https://res.cloudinary.com/dkgiwnpfi/image/upload/v1774112719/Screenshot_2026-03-21_184621-removebg-preview_zzpxcw.png"
-            alt="Santafi"
+            alt="santafe"
             className="w-16 h-16 object-contain"
           />
           <h1 className="text-5xl md:text-7xl font-black gradient-text">
             Our Premium Menu
           </h1>
         </div>
+        <p className="text-gray-500 text-sm mb-2">
+          🏪 {selectedBranch.name}
+        </p>
         <p className="text-xl text-gray-300 max-w-2xl mx-auto">
           Discover our carefully crafted menu with the finest fast-food offerings
         </p>
@@ -90,6 +148,7 @@ const Menu = ({ addToCart }) => {
 
       {/* Search + Filter */}
       <div className="px-4 md:px-8 pb-8 max-w-7xl mx-auto">
+
         {/* Search Bar */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -117,7 +176,7 @@ const Menu = ({ addToCart }) => {
           )}
         </motion.div>
 
-        {/* Category Filter Buttons */}
+        {/* Category Filter */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -125,7 +184,15 @@ const Menu = ({ addToCart }) => {
           className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide"
         >
           {loading ? (
-            <div className="text-gray-400 text-sm py-3">Loading categories...</div>
+            // ✅ Skeleton للـ categories
+            <div className="flex gap-3">
+              {[1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="h-11 w-28 rounded-xl bg-gray-800 animate-pulse flex-shrink-0"
+                />
+              ))}
+            </div>
           ) : (
             allCategories.map((cat) => (
               <motion.button
@@ -172,8 +239,15 @@ const Menu = ({ addToCart }) => {
 
       {/* Products */}
       {loading ? (
-        <div className="flex items-center justify-center py-32">
-          <div className="text-orange-400 text-2xl animate-pulse">Loading menu...</div>
+        <div className="flex flex-col items-center justify-center py-32 gap-6">
+          <div className="relative">
+            <div className="w-16 h-16 rounded-full border-4 border-orange-500/20 border-t-orange-500 animate-spin" />
+            <div className="absolute inset-0 flex items-center justify-center text-2xl">🍔</div>
+          </div>
+          <div className="text-center">
+            <p className="text-orange-400 text-xl font-bold animate-pulse">جاري تحميل المنيو...</p>
+            <p className="text-gray-500 text-sm mt-2">ثانية واحدة بس 😊</p>
+          </div>
         </div>
       ) : filteredProducts.length === 0 ? (
         <motion.div

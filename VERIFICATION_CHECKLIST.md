@@ -390,7 +390,7 @@ Students/Developers can learn:
 
 1. **Start the Application**
    ```bash
-   cd F:\santafi0.1
+   cd F:\santafe0.1
    npm start
    ```
    Or use: `npm start` in VS Code terminal
@@ -460,5 +460,5 @@ The project is production-ready and can be deployed immediately after customizat
 ---
 
 *Last verified: March 19, 2026*  
-*Santafi Restaurant Web App v1.0*  
+*santafe Restaurant Web App v1.0*  
 *Built with React.js, Tailwind CSS, & Framer Motion* 🔥

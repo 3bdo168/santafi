@@ -58,7 +58,7 @@ const CartSidebar = ({ cart, isOpen, onClose, onRemove, onUpdateQty, totalPrice 
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-white truncate">{item.name}</p>
                       <p className="text-orange-400 text-sm font-bold">
-                        ${(item.price_single * item.qty).toFixed(2)}
+                        {(item.price_single * item.qty).toFixed(2)}
                       </p>
                     </div>
                     {/* Qty Controls */}

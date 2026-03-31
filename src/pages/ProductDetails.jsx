@@ -1,57 +1,72 @@
-import React, { useState, useEffect } from "react";
+// src/pages/ProductDetails.jsx
+import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useParams, useNavigate } from "react-router-dom";
-import { doc, getDoc, collection, getDocs } from "firebase/firestore";
-import { db } from "../firebase";
+import { useClientBranch } from "../context/ClientBranchContext"; // ✅
+import { useCart } from "../context/CartContext";
+import { getBranchProductById, getBranchProducts } from "../services/productsService";
+import { getDiscountedProductPrice } from "../utils/pricing";
 
-const ProductDetails = ({ addToCart }) => {
+const ProductDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { selectedBranch } = useClientBranch(); // ✅
+  const { addToCart } = useCart();
+
   const [product, setProduct] = useState(null);
   const [related, setRelated] = useState([]);
   const [selectedSize, setSelectedSize] = useState("single");
   const [loading, setLoading] = useState(true);
   const [added, setAdded] = useState(false);
 
-  useEffect(() => {
-    fetchProduct();
-  }, [id]);
+  const fetchRelated = useCallback(async (branchId, category, currentId) => {
+    try {
+      // ✅ بيقرأ المنتجات المشابهة من نفس الـ branch
+      const all = await getBranchProducts(branchId);
+      const filtered = all
+        .filter((p) => p.category === category && p.id !== currentId)
+        .slice(0, 3);
+      setRelated(filtered);
+    } catch (err) {
+      console.error("Error fetching related:", err);
+    }
+  }, []);
 
-  const fetchProduct = async () => {
+  const fetchProduct = useCallback(async () => {
+    if (!selectedBranch?.id) return;
     setLoading(true);
     try {
-      const docSnap = await getDoc(doc(db, "products", id));
-      if (docSnap.exists()) {
-        const data = { id: docSnap.id, ...docSnap.data() };
+      const branchId = selectedBranch.id;
+      const data = await getBranchProductById(branchId, id);
+      if (data) {
         setProduct(data);
-        fetchRelated(data.category, data.id);
+        fetchRelated(branchId, data.category, data.id);
       } else {
         navigate("/menu");
       }
+    } catch (err) {
+      console.error("Error fetching product:", err);
+      navigate("/menu");
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchRelated, id, navigate, selectedBranch?.id]);
 
-  const fetchRelated = async (category, currentId) => {
-    const snap = await getDocs(collection(db, "products"));
-    const all = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-    const filtered = all
-      .filter((p) => p.category === category && p.id !== currentId)
-      .slice(0, 3);
-    setRelated(filtered);
-  };
+  useEffect(() => {
+    if (!selectedBranch?.id) {
+      navigate("/");
+      return;
+    }
+    fetchProduct();
+  }, [fetchProduct, navigate, selectedBranch?.id]);
 
   const getSelectedPrice = () => {
     if (!product) return 0;
-    if (selectedSize === "single") return product.price_single;
-    if (selectedSize === "double") return product.price_double;
-    if (selectedSize === "triple") return product.price_triple;
-    return product.price_single;
+    return getDiscountedProductPrice(product, selectedSize).discounted;
   };
 
   const handleAddToCart = () => {
-    addToCart({ ...product, price_single: getSelectedPrice() });
+    addToCart({ ...product, price_single: Number(getSelectedPrice()) || 0 });
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   };
@@ -65,10 +80,10 @@ const ProductDetails = ({ addToCart }) => {
   if (!product) return null;
 
   const sizes = [
-    { key: "single", label: "Small", price: product.price_single },
-    { key: "double", label: "Double", price: product.price_double },
-    { key: "triple", label: "Triple", price: product.price_triple },
-  ].filter((s) => s.price);
+    { key: "single", label: "Small", pricing: getDiscountedProductPrice(product, "single"), raw: product.price_single },
+    { key: "double", label: "Double", pricing: getDiscountedProductPrice(product, "double"), raw: product.price_double },
+    { key: "triple", label: "Triple", pricing: getDiscountedProductPrice(product, "triple"), raw: product.price_triple },
+  ].filter((s) => s.raw);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-dark-900 via-dark-800 to-dark-900">
@@ -108,7 +123,6 @@ const ProductDetails = ({ addToCart }) => {
                 </div>
               )}
             </div>
-
             {product.isNew && (
               <motion.div
                 initial={{ scale: 0 }}
@@ -155,7 +169,12 @@ const ProductDetails = ({ addToCart }) => {
                     >
                       {size.label}
                       <span className="block text-sm font-normal mt-0.5">
-                        ${size.price?.toFixed(2)}
+                        {size.pricing?.discounted?.toFixed(2)} ج
+                        {size.pricing?.discountAmount > 0 && (
+                          <span className="ml-2 line-through text-xs text-gray-500">
+                            {size.pricing.original.toFixed(2)}
+                          </span>
+                        )}
                       </span>
                     </motion.button>
                   ))}
@@ -166,12 +185,10 @@ const ProductDetails = ({ addToCart }) => {
             {/* Price */}
             <div className="glass p-5 rounded-xl border border-orange-500/20">
               <p className="text-gray-400 text-sm mb-1">Price</p>
-              <p className="text-4xl font-black gradient-text">
-                ${getSelectedPrice()?.toFixed(2)}
-              </p>
+              <p className="text-4xl font-black gradient-text">{getSelectedPrice()?.toFixed(2)} ج</p>
             </div>
 
-            {/* Add to Cart Button */}
+            {/* Add to Cart */}
             <motion.button
               whileHover={{ scale: 1.02, boxShadow: "0 0 40px rgba(249, 115, 22, 0.7)" }}
               whileTap={{ scale: 0.98 }}
@@ -194,7 +211,9 @@ const ProductDetails = ({ addToCart }) => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-3xl font-black gradient-text mb-8">🔥 You Might Also Like</h2>
+            <h2 className="text-3xl font-black gradient-text mb-8">
+              🔥 You Might Also Like
+            </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {related.map((item) => (
                 <motion.div
@@ -214,12 +233,13 @@ const ProductDetails = ({ addToCart }) => {
                   </div>
                   <h3 className="font-bold text-white mb-1">{item.name}</h3>
                   <p className="text-gray-400 text-sm mb-3 line-clamp-2">{item.description}</p>
-                  <p className="text-orange-400 font-black">${item.price_single?.toFixed(2)}</p>
+                  <p className="text-orange-400 font-black">{item.price_single?.toFixed(2)} ج</p>
                 </motion.div>
               ))}
             </div>
           </motion.div>
         )}
+
       </div>
     </div>
   );

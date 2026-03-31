@@ -1,9 +1,11 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { useCart } from "../context/CartContext";
 
-const CartSidebar = ({ cart, isOpen, onClose, onRemove, onUpdateQty, totalPrice }) => {
+const CartSidebar = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
+  const { cart, removeFromCart, updateQty, totalPrice } = useCart();
 
   return (
     <AnimatePresence>
@@ -69,14 +71,14 @@ const CartSidebar = ({ cart, isOpen, onClose, onRemove, onUpdateQty, totalPrice 
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-white truncate">{item.name}</p>
                       <p className="text-orange-400 text-sm font-bold">
-                        ${(item.price_single * item.qty).toFixed(2)}
+                        {(item.price_single * item.qty).toFixed(2)}
                       </p>
                     </div>
                     {/* Qty Controls */}
                     <div className="flex items-center gap-2">
                       <motion.button
                         whileTap={{ scale: 0.9 }}
-                        onClick={() => onUpdateQty(item.id, item.qty - 1)}
+                        onClick={() => updateQty(item.id, item.qty - 1)}
                         className="w-7 h-7 rounded-full bg-orange-500/20 text-orange-400 font-bold hover:bg-orange-500/40 transition-colors"
                       >
                         −
@@ -84,7 +86,7 @@ const CartSidebar = ({ cart, isOpen, onClose, onRemove, onUpdateQty, totalPrice 
                       <span className="text-white font-bold w-5 text-center">{item.qty}</span>
                       <motion.button
                         whileTap={{ scale: 0.9 }}
-                        onClick={() => onUpdateQty(item.id, item.qty + 1)}
+                        onClick={() => updateQty(item.id, item.qty + 1)}
                         className="w-7 h-7 rounded-full bg-orange-500/20 text-orange-400 font-bold hover:bg-orange-500/40 transition-colors"
                       >
                         +
@@ -93,7 +95,7 @@ const CartSidebar = ({ cart, isOpen, onClose, onRemove, onUpdateQty, totalPrice 
                     {/* Remove */}
                     <motion.button
                       whileTap={{ scale: 0.9 }}
-                      onClick={() => onRemove(item.id)}
+                      onClick={() => removeFromCart(item.id)}
                       className="text-red-400 hover:text-red-300 transition-colors text-lg"
                     >
                       🗑️

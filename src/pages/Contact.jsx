@@ -208,7 +208,6 @@ const Contact = () => {
         <div className="max-w-5xl mx-auto">
           <motion.h2
             variants={titleVariants}
-            initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
             className="text-3xl font-bold gradient-text mb-8 text-center"
@@ -224,8 +223,8 @@ const Contact = () => {
             <div className="bg-dark-900/50 rounded-lg w-full h-80 flex items-center justify-center text-gray-400">
               <div className="text-center">
                 <div className="text-6xl mb-4">📍</div>
-                <p className="text-xl font-semibold">Santafi Premium Fast Food</p>
-                <p className="text-gray-500 mt-2">123 Food Street, Culinary City, CC 12345</p>
+                <p className="text-xl font-semibold">santafe Premium Fast Food</p>
+                <p className="text-gray-500 mt-2">ميت غمر :شارع بورسعيد بجوار توكيل براون </p>
               </div>
             </div>
           </motion.div>
@@ -275,7 +274,7 @@ const contactInfo = [
 
 const socialLinks = [
   { icon: "f", url: "https://www.facebook.com/santafe.fried.chicken?locale=ar_AR" },
-  { icon: "📷", url: "https://https://www.instagram.com/santafe_fried_chicken1?fbclid=IwY2xjawQsqYdleHRuA2FlbQIxMABicmlkETEwUWZQclJybU1iemp0OUpTc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHjASXw5-BclZ6r3HVecvI8jCfsNFoQFz09WMUldgdTJfiPADXlMQSByZ3ymh_aem_b9-qKfD71hIbV1vF75LfWw" },
+  { icon: "📷", url: "https://www.instagram.com/santafe_fried_chicken1?fbclid=IwY2xjawQvsh9leHRuA2FlbQIxMABicmlkETFDckV0bWpyc3YyZk81TmhLc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHnVJg2uV4X_KftgBaMZT2dTInUo_l8XTr1qEMdvpZiOOSrUGtuPJPgdUO7Gl_aem_3P5fQhzMpzWzP3lCCwJ6Xw" },
 ];
 
 export default Contact;

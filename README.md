@@ -1,4 +1,5 @@
-# 🔥 SANTAFI - Premium Fast Food Restaurant Web App
+<<<<<<< HEAD
+# 🔥 santafe - Premium Fast Food Restaurant Web App
 
 A modern, visually stunning restaurant menu website built with React.js, Tailwind CSS, and Framer Motion.
 
@@ -64,7 +65,7 @@ src/
 
 1. **Navigate to the project directory**
    ```bash
-   cd f:\santafi0.1
+   cd f:\santafe0.1
    ```
 
 2. **Install dependencies**
@@ -191,3 +192,6 @@ For questions or issues, please open an issue in the repository.
 ---
 
 **Built with ❤️ and 🔥 using React.js**
+=======
+"# santafe" 
+>>>>>>> 2a79269d1a9a28f91d279ccad6776398955698c4

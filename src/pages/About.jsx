@@ -12,7 +12,7 @@ const About = () => {
         className="relative pt-20 pb-16 px-4 md:px-8 text-center"
       >
         <h1 className="text-5xl md:text-7xl font-black mb-6 gradient-text">
-          About Santafi
+          About santafe
         </h1>
         <p className="text-xl text-gray-300 max-w-2xl mx-auto">
           Crafting Premium Fast Food Excellence
@@ -47,7 +47,7 @@ const About = () => {
                 className="text-gray-300 space-y-4 text-lg"
               >
                 <p>
-                  Santafi was born from a passion for authentic, premium fast food. What
+                  santafe was born from a passion for authentic, premium fast food. What
                   started as a small kitchen dream has evolved into a culinary movement,
                   dedicated to delivering exceptional quality with every order.
                 </p>
@@ -57,7 +57,7 @@ const About = () => {
                   perfected, and every meal is prepared with love and precision.
                 </p>
                 <p>
-                  Today, Santafi stands as a testament to what's possible when passion
+                  Today, santafe stands as a testament to what's possible when passion
                   meets innovation in the fast-food industry.
                 </p>
               </motion.div>
@@ -222,7 +222,7 @@ const team = [
   {
     emoji: "🌟",
     role: "Customer Experience",
-    description: "Dedicated to making every interaction with Santafi memorable and delightful.",
+    description: "Dedicated to making every interaction with santafe memorable and delightful.",
   },
 ];
 

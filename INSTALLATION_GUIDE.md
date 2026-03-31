@@ -11,7 +11,7 @@
 
 2. **Navigate to project**
    ```cmd
-   cd F:\santafi0.1
+   cd F:\santafe0.1
    ```
 
 3. **Install dependencies**
@@ -55,7 +55,7 @@
 
 **Solution 1: Clear npm cache**
 ```cmd
-cd F:\santafi0.1
+cd F:\santafe0.1
 npm cache clean --force
 del node_modules /s /q
 del package-lock.json
@@ -66,14 +66,14 @@ npm start
 **Solution 2: Use yarn instead (if npm fails)**
 ```cmd
 npm install -g yarn
-cd F:\santafi0.1
+cd F:\santafe0.1
 yarn install
 yarn start
 ```
 
 **Solution 3: Use npx directly**
 ```cmd
-cd F:\santafi0.1
+cd F:\santafe0.1
 npx webpack serve
 ```
 
@@ -95,7 +95,7 @@ npm start
 ### Error: "webpack not found"
 
 ```cmd
-cd F:\santafi0.1
+cd F:\santafe0.1
 npm install webpack webpack-cli --save-dev
 npm install webpack-dev-server --save-dev
 npm start
@@ -104,7 +104,7 @@ npm start
 ### Error: "Module not found"
 
 ```cmd
-cd F:\santafi0.1
+cd F:\santafe0.1
 npm install
 npm start
 ```
@@ -124,7 +124,7 @@ Before running `npm start`, verify:
 ```
 ✅ Node.js installed: node --version
 ✅ npm installed: npm --version
-✅ In correct folder: cd F:\santafi0.1
+✅ In correct folder: cd F:\santafe0.1
 ✅ package.json exists: dir package.json
 ✅ Can see package.json: type package.json
 ```
@@ -139,7 +139,7 @@ Before running `npm start`, verify:
 
 ### Method 1: Using VS Code Terminal
 1. Open VS Code
-2. Open folder: `F:\santafi0.1`
+2. Open folder: `F:\santafe0.1`
 3. Terminal → New Terminal
 4. Run: `npm start`
 
@@ -148,7 +148,7 @@ Before running `npm start`, verify:
 2. Open Git Bash
 3. Run:
    ```bash
-   cd /f/santafi0.1
+   cd /f/santafe0.1
    npm install
    npm start
    ```
@@ -156,20 +156,20 @@ Before running `npm start`, verify:
 ### Method 3: Using Windows Subsystem for Linux (WSL)
 ```bash
 wsl
-cd /mnt/f/santafi0.1
+cd /mnt/f/santafe0.1
 npm install
 npm start
 ```
 
 ### Method 4: Manual Node.js Execution
 ```cmd
-cd F:\santafi0.1
+cd F:\santafe0.1
 node node_modules/react-scripts/bin/react-scripts.js start
 ```
 
 ### Method 5: Using Webpack Dev Server Directly
 ```cmd
-cd F:\santafi0.1
+cd F:\santafe0.1
 npx webpack serve --mode development
 ```
 
@@ -200,7 +200,7 @@ npm root -g
 
 ### Step 3: Verify Project Files
 ```cmd
-cd F:\santafi0.1
+cd F:\santafe0.1
 dir src
 dir public
 type package.json
@@ -208,7 +208,7 @@ type package.json
 
 ### Step 4: Check Node Modules
 ```cmd
-cd F:\santafi0.1
+cd F:\santafe0.1
 dir node_modules | findstr react
 ```
 
@@ -276,7 +276,7 @@ If all else fails, do a complete clean install:
 
 ```cmd
 REM Remove everything
-cd F:\santafi0.1
+cd F:\santafe0.1
 rmdir /s /q node_modules
 del package-lock.json
 
@@ -303,7 +303,7 @@ Starting the development server...
 
 Compiled successfully!
 
-You can now view santafi-restaurant in the browser.
+You can now view santafe-restaurant in the browser.
 
   Local:            http://localhost:3000
   On Your Network:  http://192.168.x.x:3000
@@ -357,10 +357,10 @@ You can now view santafi-restaurant in the browser.
 
 ```cmd
 REM Create backup
-copy F:\santafi0.1 F:\santafi0.1-backup /s /i
+copy F:\santafe0.1 F:\santafe0.1-backup /s /i
 
 REM Delete everything except src, public, package.json
-cd F:\santafi0.1
+cd F:\santafe0.1
 rmdir /s /q node_modules
 del package-lock.json
 
@@ -414,7 +414,7 @@ Check online resources:
 You'll know it's working when you see:
 1. ✅ "Compiled successfully!" message
 2. ✅ Browser automatically opens to localhost:3000
-3. ✅ Page shows your Santafi restaurant name
+3. ✅ Page shows your santafe restaurant name
 4. ✅ Orange fire-themed design visible
 5. ✅ No red error messages in terminal
 
@@ -469,4 +469,4 @@ You'll know it's working when you see:
 ---
 
 *Last Updated: March 19, 2026*  
-*Santafi Restaurant Installation Guide v1.0*
+*santafe Restaurant Installation Guide v1.0*

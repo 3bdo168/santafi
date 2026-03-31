@@ -1,4 +1,4 @@
-# 🔥 SANTAFI - Fast Food Restaurant Web App
+# 🔥 santafe - Fast Food Restaurant Web App
 ## Complete Project Implementation Summary
 
 ---
@@ -29,7 +29,7 @@ This is a **production-ready** React.js fast-food restaurant web application wit
 ## 📁 Complete Project Structure
 
 ```
-f:\santafi0.1/
+f:\santafe0.1/
 │
 ├── 📄 package.json (Dependencies configured)
 ├── 📄 tailwind.config.js (Custom Tailwind theme)
@@ -231,7 +231,7 @@ Success:         #10b981
 ### package.json
 ```json
 {
-  "name": "santafi-restaurant",
+  "name": "santafe-restaurant",
   "version": "0.1.0",
   "scripts": {
     "start": "react-scripts start",
@@ -330,7 +330,7 @@ All components tested for:
 
 ### Method 1: Using Windows Command Prompt (Recommended)
 ```cmd
-cd F:\santafi0.1
+cd F:\santafe0.1
 npm install
 npm start
 ```
@@ -470,7 +470,7 @@ For questions or issues:
 
 ## 🎉 Summary
 
-**Your Santafi Restaurant web app is completely built and ready to use!**
+**Your santafe Restaurant web app is completely built and ready to use!**
 
 - 14 source files created
 - All dependencies installed

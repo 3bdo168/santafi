@@ -1,25 +1,56 @@
+// src/pages/AdminLogin.jsx
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../firebase";
-import { useNavigate } from "react-router-dom";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, db } from "../firebase";
 
 const AdminLogin = () => {
-  const [email, setEmail] = useState("");
+  const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [error, setError]       = useState("");
+  const [loading, setLoading]   = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
+
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      navigate("/admin/dashboard");
+      // login بالـ auth الواحد
+      const userCred = await signInWithEmailAndPassword(auth, email.trim(), password);
+
+      // جيب بياناته من Firestore
+      const userDoc = await getDoc(doc(db, "admins", userCred.user.uid));
+
+      if (!userDoc.exists()) {
+        setError("مش مصرح لك بالدخول");
+        await auth.signOut();
+        setLoading(false);
+        return;
+      }
+
+      const data = userDoc.data();
+      const { role, branchId } = data;
+
+      // خزن في localStorage
+      localStorage.setItem("role", role);
+      localStorage.setItem("branchId", branchId || "");
+
+      // وجّهه على حسب الـ role
+      if (role === "owner") {
+        navigate("/owner");
+      } else if (role === "admin" && branchId) {
+        navigate(`/admin/dashboard/${branchId}`);
+      } else {
+        setError("بيانات الحساب ناقصة، كلم الأدمن");
+        await auth.signOut();
+      }
+
     } catch (err) {
-      setError("Invalid email or password");
+      setError("الإيميل أو الباسورد غلط");
     } finally {
       setLoading(false);
     }
@@ -35,7 +66,7 @@ const AdminLogin = () => {
         <div className="text-center mb-8">
           <div className="text-5xl mb-4">🔥</div>
           <h1 className="text-3xl font-black gradient-text">Admin Login</h1>
-          <p className="text-gray-400 mt-2">Santafi Dashboard</p>
+          <p className="text-gray-400 mt-2">santafe Dashboard</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-5">
@@ -46,8 +77,7 @@ const AdminLogin = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              placeholder="admin@santafi.com"
-              className="w-full px-4 py-3 bg-dark-800/50 border border-orange-500/30 rounded-lg focus:outline-none focus:border-orange-500 text-white transition-all"
+              className="w-full px-4 py-3 bg-dark-800/50 border border-orange-500/30 rounded-lg text-white"
             />
           </div>
 
@@ -58,30 +88,21 @@ const AdminLogin = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              placeholder="••••••••"
-              className="w-full px-4 py-3 bg-dark-800/50 border border-orange-500/30 rounded-lg focus:outline-none focus:border-orange-500 text-white transition-all"
+              className="w-full px-4 py-3 bg-dark-800/50 border border-orange-500/30 rounded-lg text-white"
             />
           </div>
 
           {error && (
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-red-400 text-sm text-center"
-            >
-              ❌ {error}
-            </motion.p>
+            <p className="text-red-400 text-sm text-center">❌ {error}</p>
           )}
 
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+          <button
             type="submit"
             disabled={loading}
-            className="w-full py-4 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold rounded-xl text-lg disabled:opacity-50"
+            className="w-full py-4 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold rounded-xl disabled:opacity-60"
           >
-            {loading ? "Logging in..." : "Login →"}
-          </motion.button>
+            {loading ? "جاري الدخول..." : "Login →"}
+          </button>
         </form>
       </motion.div>
     </div>
