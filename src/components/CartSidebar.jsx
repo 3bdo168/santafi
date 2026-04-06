@@ -3,9 +3,17 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 
+const FREE_DELIVERY_THRESHOLD = Number(process.env.REACT_APP_FREE_DELIVERY_THRESHOLD || 0);
+
 const CartSidebar = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
   const { cart, removeFromCart, updateQty, totalPrice } = useCart();
+  const remainingForFreeDelivery =
+    FREE_DELIVERY_THRESHOLD > 0 ? Math.max(0, FREE_DELIVERY_THRESHOLD - (Number(totalPrice) || 0)) : 0;
+  const freeProgress =
+    FREE_DELIVERY_THRESHOLD > 0
+      ? Math.min(100, ((Number(totalPrice) || 0) / FREE_DELIVERY_THRESHOLD) * 100)
+      : 0;
 
   return (
     <AnimatePresence>
@@ -108,6 +116,24 @@ const CartSidebar = ({ isOpen, onClose }) => {
             {/* Footer */}
             {cart.length > 0 && (
               <div className="p-6 border-t border-orange-500/20 space-y-4">
+                {FREE_DELIVERY_THRESHOLD > 0 && (
+                  <div className="glass p-4 rounded-xl border border-orange-500/20">
+                    {remainingForFreeDelivery <= 0 ? (
+                      <p className="text-green-400 font-bold text-sm">✅ وصلت للحد الأدنى… توصيل مجاني!</p>
+                    ) : (
+                      <p className="text-gray-300 font-semibold text-sm">
+                        ضيف <span className="text-orange-400 font-black">{remainingForFreeDelivery.toFixed(2)} ج</span>{" "}
+                        عشان توصل لتوصيل مجاني
+                      </p>
+                    )}
+                    <div className="mt-3 w-full bg-dark-800 rounded-full h-2 overflow-hidden">
+                      <div
+                        className="h-2 bg-gradient-to-r from-orange-500 to-red-500"
+                        style={{ width: `${freeProgress}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
                 <div className="flex justify-between text-xl font-bold">
                   <span className="text-gray-300">Total:</span>
                   <span className="gradient-text">${totalPrice.toFixed(2)}</span>

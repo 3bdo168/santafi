@@ -11,6 +11,7 @@ import {
   query,
   addDoc,
   updateDoc,
+  deleteDoc,
 } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { useNavigate, Link } from "react-router-dom";
@@ -50,7 +51,7 @@ const OwnerDashboard = () => {
   });
 
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, "ownerTargets", "data"), (snap) => {
+    const unsub = onSnapshot(collection(db, "ownerTargets", "main", "data"), (snap) => {
       setTargets(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
     });
     return () => unsub();
@@ -293,7 +294,7 @@ const OwnerDashboard = () => {
       alert("اكتب الاسم وقيمة التارجت");
       return;
     }
-    await addDoc(collection(db, "ownerTargets", "data"), {
+    await addDoc(collection(db, "ownerTargets", "main", "data"), {
       ...targetForm,
       targetValue: Number(targetForm.targetValue) || 0,
       rewardValue: Number(targetForm.rewardValue) || 0,
@@ -314,13 +315,22 @@ const OwnerDashboard = () => {
 
   const handleUpdateTargetStatus = async (target) => {
     const stats = branchStats[target.branchId] || {};
-    const currentValue = target.type === "revenue" ? Number(stats.revenue || 0) : Number(stats.total || 0);
+    // ✅ orders targets should track delivered/completed orders, not total (which includes pending/preparing)
+    const currentValue =
+      target.type === "revenue"
+        ? Number(stats.revenue || 0)
+        : Number(stats.delivered || 0);
     const achieved = currentValue >= Number(target.targetValue || 0);
-    await updateDoc(doc(db, "ownerTargets", "data", target.id), {
+    await updateDoc(doc(db, "ownerTargets", "main", "data", target.id), {
       status: achieved ? "completed" : "active",
       currentValue,
       evaluatedAt: new Date().toISOString(),
     });
+  };
+
+  const handleDeleteTarget = async (target) => {
+    if (!window.confirm(`هتمسح تارجت "${target.assignee}"؟`)) return;
+    await deleteDoc(doc(db, "ownerTargets", "main", "data", target.id));
   };
 
   // ── Totals ────────────────────────────────────────────────
@@ -861,6 +871,7 @@ const OwnerDashboard = () => {
                         {t.status === "completed" ? "متحقق" : "نشط"}
                       </span>
                       <button onClick={() => handleUpdateTargetStatus(t)} className="px-3 py-2 text-sm bg-blue-600 rounded-lg">تحديث</button>
+                      <button onClick={() => handleDeleteTarget(t)} className="px-3 py-2 text-sm bg-red-600 rounded-lg">حذف</button>
                     </div>
                   </div>
                 ))}

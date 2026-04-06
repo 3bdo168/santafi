@@ -2,24 +2,30 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { collection, addDoc, getDocs, serverTimestamp } from "firebase/firestore";
+import {
+  collection, getDocs, serverTimestamp,
+  doc, updateDoc, increment, setDoc
+} from "firebase/firestore";
 import { db } from "../firebase";
 import { useClientBranch } from "../context/ClientBranchContext";
-import { useClientAuth } from "../context/ClientAuthContext"; // ✅ جديد
+import { useClientAuth } from "../context/ClientAuthContext";
 import { useCart } from "../context/CartContext";
-import { calculateFinalTotals } from "../utils/pricing";
+import { calculateCartSubtotal, calculateFinalTotals } from "../utils/pricing";
+import RecommendationsPopup from "../components/RecommendationsPopup";
 
 const PAYMOB_API_KEY = process.env.REACT_APP_PAYMOB_API_KEY;
 const WALLET_INTEGRATION_ID = process.env.REACT_APP_PAYMOB_WALLET_INTEGRATION_ID;
 const CARD_INTEGRATION_ID = process.env.REACT_APP_PAYMOB_CARD_INTEGRATION_ID;
 const CARD_IFRAME_ID = process.env.REACT_APP_PAYMOB_CARD_IFRAME_ID;
 const WALLET_IFRAME_ID = process.env.REACT_APP_PAYMOB_WALLET_IFRAME_ID;
+const MANUAL_PAYMENT_PHONE = process.env.REACT_APP_MANUAL_PAYMENT_PHONE || "01091873443";
+const FREE_DELIVERY_THRESHOLD = Number(process.env.REACT_APP_FREE_DELIVERY_THRESHOLD || 0);
 
 const Checkout = () => {
   const navigate = useNavigate();
   const { selectedBranch } = useClientBranch();
-  const { clientUser } = useClientAuth(); // ✅ جديد
-  const { cart, clearCart } = useCart();
+  const { clientUser } = useClientAuth();
+  const { cart, clearCart, addToCart } = useCart();
 
   const [step, setStep] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState("");
@@ -35,13 +41,18 @@ const Checkout = () => {
   });
 
   const selectedZone = availableZones.find((z) => z.id === selectedZoneId) || null;
+  const subtotalForThreshold = calculateCartSubtotal(cart);
+  const effectiveDeliveryFee =
+    FREE_DELIVERY_THRESHOLD > 0 && subtotalForThreshold >= FREE_DELIVERY_THRESHOLD
+      ? 0
+      : (selectedZone?.fee || 0);
+
   const totals = calculateFinalTotals({
     cart,
     coupon: appliedCoupon,
-    deliveryFee: selectedZone?.fee || 0,
+    deliveryFee: effectiveDeliveryFee,
   });
 
-  // ✅ لو logged in، املي الـ form تلقائياً
   useEffect(() => {
     if (clientUser) {
       setFormData((prev) => ({
@@ -57,18 +68,12 @@ const Checkout = () => {
     const loadCommerceConfigs = async () => {
       if (!selectedBranch?.id) return;
       try {
-        const [globalCoupons, branchCoupons, globalZones, branchZones] = await Promise.all([
-          getDocs(collection(db, "discountCoupons", "data")),
+        const [branchCoupons, branchZones] = await Promise.all([
           getDocs(collection(db, selectedBranch.id, "discountCoupons", "data")),
-          getDocs(collection(db, "deliveryZones", "data")),
           getDocs(collection(db, selectedBranch.id, "deliveryZones", "data")),
         ]);
 
         const couponMap = {};
-        globalCoupons.docs.forEach((d) => {
-          const coupon = { id: d.id, ...d.data() };
-          couponMap[(coupon.code || d.id).toUpperCase()] = coupon;
-        });
         branchCoupons.docs.forEach((d) => {
           const coupon = { id: d.id, ...d.data() };
           couponMap[(coupon.code || d.id).toUpperCase()] = coupon;
@@ -76,7 +81,6 @@ const Checkout = () => {
         setAvailableCoupons(Object.values(couponMap));
 
         const zoneMap = {};
-        globalZones.docs.forEach((d) => (zoneMap[d.id] = { id: d.id, ...d.data() }));
         branchZones.docs.forEach((d) => (zoneMap[d.id] = { id: d.id, ...d.data() }));
         const zones = Object.values(zoneMap).filter((z) => z.active !== false);
         setAvailableZones(zones);
@@ -104,16 +108,39 @@ const Checkout = () => {
     const found = availableCoupons.find(
       (coupon) => (coupon.code || "").toUpperCase() === normalized
     );
+
     if (!found || found.active === false) {
       setAppliedCoupon(null);
       setCouponError("الكوبون غير صالح");
       return;
     }
+
+    const now = new Date();
+
+    if (found.startDate && new Date(found.startDate) > now) {
+      setAppliedCoupon(null);
+      setCouponError("الكوبون لم يبدأ بعد");
+      return;
+    }
+
+    if (found.endDate && new Date(found.endDate) < now) {
+      setAppliedCoupon(null);
+      setCouponError("الكوبون منتهي الصلاحية");
+      return;
+    }
+
+    if (found.usageLimit && Number(found.usageCount || 0) >= Number(found.usageLimit)) {
+      setAppliedCoupon(null);
+      setCouponError("الكوبون استُنفد");
+      return;
+    }
+
     if (found.expiresAt?.toMillis && found.expiresAt.toMillis() < Date.now()) {
       setAppliedCoupon(null);
       setCouponError("الكوبون منتهي");
       return;
     }
+
     setAppliedCoupon(found);
   };
 
@@ -125,7 +152,7 @@ const Checkout = () => {
     paymentMethod,
     branchId: selectedBranch?.id || "unknown",
     branchName: selectedBranch?.name || "غير محدد",
-    clientUid: clientUser?.uid || null, // ✅ بيحفظ الـ uid لو logged in
+    clientUid: clientUser?.uid || null,
     items: cart.map((i) => ({
       name: i.name,
       qty: i.qty,
@@ -138,25 +165,61 @@ const Checkout = () => {
     deliveryZoneId: selectedZone?.id || null,
     deliveryZoneName: selectedZone?.name || null,
     deliveryFee: totals.deliveryFee || 0,
+    originalDeliveryFee: Number(selectedZone?.fee || 0),
+    freeDeliveryApplied: FREE_DELIVERY_THRESHOLD > 0 && subtotalForThreshold >= FREE_DELIVERY_THRESHOLD,
     total: totals.total,
     createdAt: serverTimestamp(),
     status: "pending",
     ...extra,
   });
 
+  const incrementCouponUsage = async () => {
+    if (!appliedCoupon?.code || !selectedBranch?.id) return;
+    try {
+      await updateDoc(
+        doc(db, selectedBranch.id, "discountCoupons", "data", appliedCoupon.code),
+        { usageCount: increment(1) }
+      );
+    } catch (err) {
+      console.error("Failed to increment coupon usage:", err);
+    }
+  };
+
+  // ✅ نولّد ID واحد ونستخدمه في الـ collections الاتنين + نرجّعه
   const saveOrder = async (extraData = {}) => {
-    const orderData = buildOrderData(extraData);
     const branchId = selectedBranch?.id;
     if (!branchId) throw new Error("لم يتم اختيار الفرع!");
+
+    // ✅ نعمل ref بـ ID عشوائي جديد من collection الفرع
+    const newOrderRef = doc(collection(db, branchId, "orders", "data"));
+    const sharedId = newOrderRef.id; // نفس الـ ID هنحطه في all_orders
+    const orderData = buildOrderData({ ...extraData, orderId: sharedId });
+
     await Promise.all([
-      addDoc(collection(db, branchId, "orders", "data"), orderData),
-      addDoc(collection(db, "all_orders"), orderData),
+      setDoc(newOrderRef, orderData),
+      setDoc(doc(db, "all_orders", sharedId), orderData),
     ]);
+
+    await incrementCouponUsage();
+    return sharedId;
   };
 
   const handlePaymob = async () => {
     setLoading(true);
     try {
+      if (paymentMethod !== "card" && paymentMethod !== "wallet") {
+        throw new Error("طريقة دفع Paymob غير صحيحة");
+      }
+
+      // 1) احفظ الأوردر كـ pending_payment (قبل الدفع) بنفس الـ ID
+      const sharedId = await saveOrder({
+        status: "pending_payment",
+        paymentStatus: "initiated",
+        paymentProvider: "paymob",
+      });
+      sessionStorage.setItem("pendingPaymobOrderId", sharedId);
+
+      // 2) Paymob auth
       const authRes = await fetch("https://accept.paymob.com/api/auth/tokens", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -164,7 +227,9 @@ const Checkout = () => {
       });
       const authData = await authRes.json();
       const token = authData.token;
+      if (!token) throw new Error("Paymob auth failed");
 
+      // 3) Register Paymob order (bind merchant_order_id to Firestore id)
       const orderRes = await fetch("https://accept.paymob.com/api/ecommerce/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -173,6 +238,7 @@ const Checkout = () => {
           delivery_needed: false,
           amount_cents: Math.round(totals.total * 100),
           currency: "EGP",
+          merchant_order_id: sharedId,
           items: cart.map((i) => ({
             name: i.name,
             amount_cents: Math.round(i.price_single * 100),
@@ -183,6 +249,7 @@ const Checkout = () => {
       });
       const orderData = await orderRes.json();
       const orderId = orderData.id;
+      if (!orderId) throw new Error("Paymob order creation failed");
 
       const nameParts = formData.name.split(" ");
       const paymentKeyRes = await fetch("https://accept.paymob.com/api/acceptance/payment_keys", {
@@ -208,9 +275,21 @@ const Checkout = () => {
       });
       const paymentKeyData = await paymentKeyRes.json();
       const paymentKey = paymentKeyData.token;
+      if (!paymentKey) throw new Error("Paymob payment key failed");
 
-      await saveOrder({ paymobOrderId: orderId });
-      clearCart();
+      // 4) خزّن Paymob order id على نفس الأوردر (branch + all_orders)
+      await Promise.all([
+        setDoc(
+          doc(db, selectedBranch.id, "orders", "data", sharedId),
+          { paymobOrderId: String(orderId), paymentStatus: "initiated" },
+          { merge: true }
+        ),
+        setDoc(
+          doc(db, "all_orders", sharedId),
+          { paymobOrderId: String(orderId), paymentStatus: "initiated" },
+          { merge: true }
+        ),
+      ]);
 
       if (paymentMethod === "wallet") {
         window.location.href = `https://accept.paymob.com/api/acceptance/iframes/${WALLET_IFRAME_ID}?payment_token=${paymentKey}`;
@@ -232,9 +311,13 @@ const Checkout = () => {
       return;
     }
 
+    // Paymob methods are disabled in this build
     if (paymentMethod === "card" || paymentMethod === "wallet") {
-      await handlePaymob();
-    } else {
+      alert("طريقة الدفع دي غير متاحة حالياً.");
+      return;
+    }
+
+    {
       setLoading(true);
       try {
         await saveOrder();
@@ -312,7 +395,6 @@ const Checkout = () => {
               <div className="glass p-8 rounded-2xl border border-orange-500/20 space-y-6">
                 <div className="flex items-center justify-between">
                   <h2 className="text-2xl font-bold text-orange-400">📦 Delivery Details</h2>
-                  {/* ✅ بيظهر إنه logged in */}
                   {clientUser && (
                     <span className="text-xs px-3 py-1 rounded-full font-semibold"
                       style={{ background: "rgba(255,215,0,0.1)", color: "#FFD700", border: "1px solid rgba(255,215,0,0.2)" }}>
@@ -337,18 +419,14 @@ const Checkout = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-300 mb-2">Delivery Zone</label>
-                  <select
-                    value={selectedZoneId}
-                    onChange={(e) => setSelectedZoneId(e.target.value)}
+                  <select value={selectedZoneId} onChange={(e) => setSelectedZoneId(e.target.value)}
                     className="w-full px-4 py-3 bg-dark-800/50 border border-orange-500/30 rounded-lg focus:outline-none focus:border-orange-500 text-white transition-all"
                   >
                     {availableZones.length === 0 ? (
                       <option value="">No delivery zones yet</option>
                     ) : (
                       availableZones.map((zone) => (
-                        <option key={zone.id} value={zone.id}>
-                          {zone.name} - {Number(zone.fee || 0).toFixed(2)} ج
-                        </option>
+                        <option key={zone.id} value={zone.id}>{zone.name} - {Number(zone.fee || 0).toFixed(2)} ج</option>
                       ))
                     )}
                   </select>
@@ -386,13 +464,13 @@ const Checkout = () => {
                       Apply
                     </button>
                   </div>
-                  {appliedCoupon && <p className="text-green-400 text-sm mt-2">Coupon applied: {appliedCoupon.code}</p>}
-                  {couponError && <p className="text-red-400 text-sm mt-2">{couponError}</p>}
+                  {appliedCoupon && <p className="text-green-400 text-sm mt-2">✅ Coupon applied: {appliedCoupon.code}</p>}
+                  {couponError && <p className="text-red-400 text-sm mt-2">❌ {couponError}</p>}
                 </div>
                 {[
                   { id: "cod",      icon: "💵", label: "Cash on Delivery", desc: "Pay when your order arrives" },
-                  { id: "vodafone", icon: "📱", label: "Vodafone Cash",     desc: "Send to: 01091873443" },
-                  { id: "instapay", icon: "⚡", label: "InstaPay",          desc: "Send to: 01091873443" },
+                  { id: "vodafone", icon: "📱", label: "Vodafone Cash",     desc: `Send to: ${MANUAL_PAYMENT_PHONE}` },
+                  { id: "instapay", icon: "⚡", label: "InstaPay",          desc: `Send to: ${MANUAL_PAYMENT_PHONE}` },
                 ].map((method) => (
                   <motion.div key={method.id} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                     onClick={() => setPaymentMethod(method.id)}
@@ -428,7 +506,7 @@ const Checkout = () => {
                           <p className="text-gray-300 text-sm">Transfer <span className="text-yellow-400 font-bold">{totals.total.toFixed(2)} EGP</span> to:</p>
                         </div>
                         <div className="flex items-center gap-2 bg-dark-800/50 px-3 py-2 rounded-lg">
-                          <span className="text-white font-black text-lg tracking-widest">01091873443</span>
+                          <span className="text-white font-black text-lg tracking-widest">{MANUAL_PAYMENT_PHONE}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-orange-400 font-bold text-xs bg-orange-500/20 px-2 py-0.5 rounded-full">2</span>
@@ -449,7 +527,7 @@ const Checkout = () => {
                     disabled={!paymentMethod || loading}
                     className="flex-1 py-4 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {loading ? "Processing..." : (paymentMethod === "card" || paymentMethod === "wallet") ? "Pay Now 🔒" : "Place Order 🎉"}
+                    {loading ? "Processing..." : "Place Order 🎉"}
                   </motion.button>
                 </div>
               </div>
@@ -486,6 +564,14 @@ const Checkout = () => {
           )}
 
         </AnimatePresence>
+
+        {step !== 3 && cart.length > 0 && (
+          <RecommendationsPopup
+            branchId={selectedBranch?.id}
+            cart={cart}
+            onAddToCart={addToCart}
+          />
+        )}
       </div>
     </div>
   );
@@ -516,6 +602,29 @@ const OrderSummary = ({ cart, totals, selectedZone }) => (
       <div className="flex justify-between text-gray-400"><span>Subtotal</span><span>{totals.subtotal.toFixed(2)} ج</span></div>
       <div className="flex justify-between text-gray-400"><span>Coupon</span><span className="text-green-400">- {totals.couponDiscount.toFixed(2)} ج</span></div>
       <div className="flex justify-between text-gray-400"><span>Delivery {selectedZone ? `(${selectedZone.name})` : ""}</span><span>{totals.deliveryFee.toFixed(2)} ج</span></div>
+      {FREE_DELIVERY_THRESHOLD > 0 && (
+        <div className="mt-3 p-3 rounded-xl border border-orange-500/20 bg-dark-800/30">
+          {totals.subtotal >= FREE_DELIVERY_THRESHOLD ? (
+            <p className="text-green-400 font-bold text-sm">✅ توصيل مجاني اتفعل</p>
+          ) : (
+            <p className="text-gray-300 text-sm font-semibold">
+              ضيف{" "}
+              <span className="text-orange-400 font-black">
+                {(FREE_DELIVERY_THRESHOLD - totals.subtotal).toFixed(2)} ج
+              </span>{" "}
+              عشان التوصيل يبقى مجاني
+            </p>
+          )}
+          <div className="mt-2 w-full bg-dark-700 rounded-full h-2 overflow-hidden">
+            <div
+              className="h-2 bg-gradient-to-r from-orange-500 to-red-500"
+              style={{
+                width: `${Math.min(100, (totals.subtotal / (FREE_DELIVERY_THRESHOLD || 1)) * 100)}%`,
+              }}
+            />
+          </div>
+        </div>
+      )}
       <div className="flex justify-between text-xl font-black mt-3">
         <span className="text-white">Total</span>
         <span className="gradient-text">{totals.total.toFixed(2)} ج</span>

@@ -12,6 +12,7 @@ import Menu from "./pages/Menu";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Checkout from "./pages/Checkout";
+import PaymobReturn from "./pages/PaymobReturn";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import OwnerDashboard from "./pages/OwnerDashboard";
@@ -85,6 +86,7 @@ function App() {
                   <Route path="/about" element={<About />} />
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/checkout" element={<Checkout />} />
+                  <Route path="/payment/paymob" element={<PaymobReturn />} />
                   <Route path="/product/:id" element={<ProductDetails />} />
                 </Route>
                 <Route path="*" element={<Navigate to="/home" replace />} />

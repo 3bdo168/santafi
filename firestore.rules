@@ -1,0 +1,86 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function adminDoc() {
+      return get(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function isAdminOrOwner() {
+      return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)) &&
+        adminDoc().data.role in ["owner", "admin"];
+    }
+
+    function isOwner() {
+      return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)) &&
+        adminDoc().data.role == "owner";
+    }
+
+    function isAdminForBranch(branchId) {
+      return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)) &&
+        adminDoc().data.role == "admin" &&
+        adminDoc().data.branchId == branchId;
+    }
+
+    match /admins/{userId} {
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow write: if false;
+    }
+
+    match /clients/{userId} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    // ✅ all_orders
+    match /all_orders/{docId} {
+      // العميل ينشئ أوردر لنفسه فقط (Cloud Functions تقدر تكتب برضه كـ Admin SDK)
+      allow create: if isSignedIn() &&
+        request.resource.data.clientUid == request.auth.uid;
+
+      allow read: if isSignedIn() && (
+        resource.data.clientUid == request.auth.uid ||
+        isAdminOrOwner()
+      );
+
+      allow update: if isAdminOrOwner();
+    }
+
+    match /weeklyReports/{doc}/reports/{reportId} {
+      allow read, write: if isOwner();
+    }
+
+    // ✅ ownerTargets — التارجتات (للـ owner فقط)
+    match /ownerTargets/{doc}/data/{docId} {
+      allow read, write: if isOwner();
+    }
+
+    match /{branchId}/{section}/data/{docId} {
+
+      // ── products & categories — القراءة للكل، الكتابة للأدمن/أونر ──
+      allow read: if section == "products" || section == "categories";
+      allow write: if (section == "products" || section == "categories") &&
+        (isOwner() || isAdminForBranch(branchId));
+
+      // ── orders — إنشاء للعملاء، قراءة/تعديل/حذف للأدمن/أونر ──
+      allow create: if section == "orders" && isSignedIn();
+      allow read, update, delete: if section == "orders" && (isOwner() || isAdminForBranch(branchId));
+
+      // ── archived_orders — قراءة/كتابة للأدمن/أونر ──
+      allow read, write: if section == "archived_orders" && (isOwner() || isAdminForBranch(branchId));
+
+      // ✅ discountCoupons — قراءة/كتابة للأدمن/أونر (كانت ناقصة!)
+      allow read, write: if section == "discountCoupons" && (isOwner() || isAdminForBranch(branchId));
+
+      // ✅ deliveryZones — قراءة/كتابة للأدمن/أونر (كانت ناقصة!)
+      allow read, write: if section == "deliveryZones" && (isOwner() || isAdminForBranch(branchId));
+
+      // ✅ recommendations — القراءة للكل (عشان الـ popup في الـ checkout)، الكتابة للأدمن/أونر
+      allow read: if section == "recommendations";
+      allow write: if section == "recommendations" && (isOwner() || isAdminForBranch(branchId));
+    }
+  }
+}
