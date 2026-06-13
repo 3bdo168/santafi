@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { useClientAuth } from "../context/ClientAuthContext";
 
-const Navbar = ({ totalItems = 0, onCartClick }) => {
+const Navbar = ({ totalItems = 0, onCartClick, showOffersTab = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const { clientUser, logout } = useClientAuth();
@@ -42,6 +42,7 @@ const Navbar = ({ totalItems = 0, onCartClick }) => {
         <div className="hidden md:flex items-center gap-8">
           <NavLink to="/home" label="Home" />
           <NavLink to="/menu" label="Menu" />
+          {showOffersTab && <NavLink to="/offers" label={<>العروض <span style={{ WebkitTextFillColor: 'initial', color: 'initial' }}>🔥</span></>} />}
           <NavLink to="/about" label="About" />
           <NavLink to="/contact" label="Contact" />
         </div>
@@ -56,7 +57,7 @@ const Navbar = ({ totalItems = 0, onCartClick }) => {
             onClick={onCartClick}
             className="relative"
           >
-            <div className="text-2xl">🛒</div>
+            <div className="text-2xl" style={{ WebkitTextFillColor: 'initial', color: 'initial' }}>🛒</div>
             {totalItems > 0 && (
               <motion.div
                 initial={{ scale: 0 }}
@@ -120,7 +121,7 @@ const Navbar = ({ totalItems = 0, onCartClick }) => {
                         whileHover={{ background: "rgba(255,215,0,0.08)" }}
                         className="flex items-center gap-2 px-4 py-3 text-sm text-gray-300 cursor-pointer transition-all"
                       >
-                        <span>👤</span>
+                        <span style={{ WebkitTextFillColor: 'initial', color: 'initial' }}>👤</span>
                         <span>حسابي</span>
                       </motion.div>
                     </Link>
@@ -131,7 +132,7 @@ const Navbar = ({ totalItems = 0, onCartClick }) => {
                       className="flex items-center gap-2 px-4 py-3 text-sm cursor-pointer transition-all"
                       style={{ color: "#ff6b6b" }}
                     >
-                      <span>🚪</span>
+                      <span style={{ WebkitTextFillColor: 'initial', color: 'initial' }}>🚪</span>
                       <span>تسجيل خروج</span>
                     </motion.div>
                   </motion.div>
@@ -150,7 +151,7 @@ const Navbar = ({ totalItems = 0, onCartClick }) => {
                   color: "#0a0a0a",
                 }}
               >
-                دخول 👤
+                دخول <span style={{ WebkitTextFillColor: 'initial', color: 'initial' }}>👤</span>
               </motion.button>
             </Link>
           )}
@@ -173,22 +174,23 @@ const Navbar = ({ totalItems = 0, onCartClick }) => {
           >
             <NavLink to="/home" label="Home" mobile />
             <NavLink to="/menu" label="Menu" mobile />
+            {showOffersTab && <NavLink to="/offers" label={<>العروض <span style={{ WebkitTextFillColor: 'initial', color: 'initial' }}>🔥</span></>} mobile />}
             <NavLink to="/about" label="About" mobile />
             <NavLink to="/contact" label="Contact" mobile />
             {clientUser ? (
               <>
-                <NavLink to="/profile" label="👤 حسابي" mobile />
+                <NavLink to="/profile" label={<><span style={{ WebkitTextFillColor: 'initial', color: 'initial' }}>👤</span> حسابي</>} mobile />
                 <motion.div
                   onClick={handleLogout}
                   whileTap={{ scale: 0.95 }}
                   className="block py-2 font-semibold cursor-pointer"
                   style={{ color: "#ff6b6b" }}
                 >
-                  🚪 تسجيل خروج
+                  <span style={{ WebkitTextFillColor: 'initial', color: 'initial' }}>🚪</span> تسجيل خروج
                 </motion.div>
               </>
             ) : (
-              <NavLink to="/login" label="👤 دخول" mobile />
+              <NavLink to="/login" label={<><span style={{ WebkitTextFillColor: 'initial', color: 'initial' }}>👤</span> دخول</>} mobile />
             )}
           </motion.div>
         )}

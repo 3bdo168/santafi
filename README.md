@@ -1,6 +1,6 @@
 # santafe
 
-Restaurant web app (client + admin/owner dashboards) built with **React (CRA)** + **Firebase (Auth + Firestore)** + **Framer Motion**.
+Restaurant web app (client + admin/owner dashboards) built with **React + Vite** + **Firebase (Auth + Firestore)** + **Framer Motion**.
 
 ## ✅ What’s included
 
@@ -10,7 +10,7 @@ Restaurant web app (client + admin/owner dashboards) built with **React (CRA)** 
 
 ## 🧱 Tech stack
 
-- React + react-scripts (CRA)
+- React + Vite
 - React Router
 - Firebase (Auth, Firestore)
 - Framer Motion
@@ -28,7 +28,7 @@ npm install
 3. Start dev server:
 
 ```bash
-npm start
+npm run dev
 ```
 
 ## 🔐 Firebase / Firestore

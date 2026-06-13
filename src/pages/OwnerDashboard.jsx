@@ -381,7 +381,7 @@ const OwnerDashboard = () => {
       <div className="bg-gray-800 px-6 py-4 flex justify-between items-center sticky top-0 z-10 border-b border-gray-700">
         <div className="flex items-center gap-3">
           <span className="text-2xl">👑</span>
-          <h1 className="text-xl font-bold text-yellow-400">ownerDashboard</h1>
+          <h1 className="text-xl font-bold text-yellow-400">AmrDashboard</h1>
         </div>
         <div className="flex items-center gap-3 flex-wrap justify-end">
           {totalInProgress > 0 && (

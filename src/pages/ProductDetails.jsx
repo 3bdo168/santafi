@@ -2,15 +2,17 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useParams, useNavigate } from "react-router-dom";
-import { useClientBranch } from "../context/ClientBranchContext"; // ✅
+import { useClientBranch } from "../context/ClientBranchContext";
 import { useCart } from "../context/CartContext";
 import { getBranchProductById, getBranchProducts } from "../services/productsService";
 import { getDiscountedProductPrice } from "../utils/pricing";
+import { collection, doc, getDoc, getDocs } from "firebase/firestore";
+import { db } from "../firebase";
 
 const ProductDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { selectedBranch } = useClientBranch(); // ✅
+  const { selectedBranch } = useClientBranch();
   const { addToCart } = useCart();
 
   const [product, setProduct] = useState(null);
@@ -19,9 +21,13 @@ const ProductDetails = () => {
   const [loading, setLoading] = useState(true);
   const [added, setAdded] = useState(false);
 
+  // ✅ Modifiers state
+  const [modifierGroups, setModifierGroups] = useState([]);
+  const [selectedModifiers, setSelectedModifiers] = useState({});
+  const [modifiersLoading, setModifiersLoading] = useState(false);
+
   const fetchRelated = useCallback(async (branchId, category, currentId) => {
     try {
-      // ✅ بيقرأ المنتجات المشابهة من نفس الـ branch
       const all = await getBranchProducts(branchId);
       const filtered = all
         .filter((p) => p.category === category && p.id !== currentId)
@@ -29,6 +35,43 @@ const ProductDetails = () => {
       setRelated(filtered);
     } catch (err) {
       console.error("Error fetching related:", err);
+    }
+  }, []);
+
+  // ✅ Fetch modifier groups and their options
+  const fetchModifiers = useCallback(async (groupIds) => {
+    if (!groupIds || groupIds.length === 0) {
+      setModifierGroups([]);
+      return;
+    }
+    setModifiersLoading(true);
+    try {
+      const groups = [];
+      for (const gId of groupIds) {
+        const groupSnap = await getDoc(doc(db, "modifierGroups", gId));
+        if (groupSnap.exists()) {
+          const optionsSnap = await getDocs(collection(db, "modifierGroups", gId, "options"));
+          const options = optionsSnap.docs
+            .map((d) => ({ id: d.id, ...d.data() }))
+            .filter((o) => o.isActive !== false);
+          groups.push({ id: gId, ...groupSnap.data(), options });
+        }
+      }
+      setModifierGroups(groups);
+      // Initialize default selections for single-select groups
+      const defaults = {};
+      groups.forEach((g) => {
+        if (g.selectionMode === "single" && Number(g.min) > 0 && g.options.length > 0) {
+          defaults[g.id] = [g.options[0].id];
+        } else {
+          defaults[g.id] = [];
+        }
+      });
+      setSelectedModifiers(defaults);
+    } catch (err) {
+      console.error("Error fetching modifiers:", err);
+    } finally {
+      setModifiersLoading(false);
     }
   }, []);
 
@@ -41,6 +84,13 @@ const ProductDetails = () => {
       if (data) {
         setProduct(data);
         fetchRelated(branchId, data.category, data.id);
+        // ✅ Load modifiers if product has them
+        if (data.modifierGroupIds && data.modifierGroupIds.length > 0) {
+          fetchModifiers(data.modifierGroupIds);
+        } else {
+          setModifierGroups([]);
+          setSelectedModifiers({});
+        }
       } else {
         navigate("/menu");
       }
@@ -50,7 +100,7 @@ const ProductDetails = () => {
     } finally {
       setLoading(false);
     }
-  }, [fetchRelated, id, navigate, selectedBranch?.id]);
+  }, [fetchRelated, fetchModifiers, id, navigate, selectedBranch?.id]);
 
   useEffect(() => {
     if (!selectedBranch?.id) {
@@ -60,13 +110,77 @@ const ProductDetails = () => {
     fetchProduct();
   }, [fetchProduct, navigate, selectedBranch?.id]);
 
+  // ✅ Handle modifier selection
+  const handleModifierToggle = (groupId, optionId, selectionMode) => {
+    setSelectedModifiers((prev) => {
+      const current = prev[groupId] || [];
+      if (selectionMode === "single") {
+        return { ...prev, [groupId]: [optionId] };
+      }
+      // multi
+      if (current.includes(optionId)) {
+        return { ...prev, [groupId]: current.filter((id) => id !== optionId) };
+      }
+      // Check max
+      const group = modifierGroups.find((g) => g.id === groupId);
+      const max = Number(group?.max || 999);
+      if (current.length >= max) return prev;
+      return { ...prev, [groupId]: [...current, optionId] };
+    });
+  };
+
+  // ✅ Calculate modifiers total price
+  const getModifiersTotal = () => {
+    let total = 0;
+    modifierGroups.forEach((g) => {
+      const selected = selectedModifiers[g.id] || [];
+      g.options.forEach((opt) => {
+        if (selected.includes(opt.id)) {
+          total += Number(opt.priceDelta || 0);
+        }
+      });
+    });
+    return total;
+  };
+
+  // ✅ Get selected modifiers as array for cart
+  const getSelectedModifiersArray = () => {
+    const result = [];
+    modifierGroups.forEach((g) => {
+      const selected = selectedModifiers[g.id] || [];
+      g.options.forEach((opt) => {
+        if (selected.includes(opt.id)) {
+          result.push({
+            groupId: g.id,
+            groupTitle: g.title,
+            optionId: opt.id,
+            optionName: opt.name,
+            priceDelta: Number(opt.priceDelta || 0),
+            image: opt.image || "",
+          });
+        }
+      });
+    });
+    return result;
+  };
+
   const getSelectedPrice = () => {
     if (!product) return 0;
     return getDiscountedProductPrice(product, selectedSize).discounted;
   };
 
+  const getTotalPrice = () => {
+    return (getSelectedPrice() || 0) + getModifiersTotal();
+  };
+
   const handleAddToCart = () => {
-    addToCart({ ...product, price_single: Number(getSelectedPrice()) || 0 });
+    const modifiers = getSelectedModifiersArray();
+    addToCart({
+      ...product,
+      price_single: Number(getTotalPrice()) || 0,
+      selectedSize,
+      selectedModifiers: modifiers,
+    });
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   };
@@ -182,10 +296,89 @@ const ProductDetails = () => {
               </div>
             )}
 
+            {/* ✅ Modifiers / Add-ons Section */}
+            {modifierGroups.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-4"
+              >
+                <p className="text-gray-400 font-semibold flex items-center gap-2">
+                  🧩 الإضافات
+                  {modifiersLoading && <span className="text-xs text-orange-400 animate-pulse">جاري التحميل...</span>}
+                </p>
+                {modifierGroups.map((group) => {
+                  const selected = selectedModifiers[group.id] || [];
+                  const isRequired = Number(group.min || 0) > 0;
+                  return (
+                    <div key={group.id} className="glass p-4 rounded-xl border border-orange-500/20">
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-white font-bold text-sm">
+                          {group.title}
+                          {isRequired && <span className="text-red-400 text-xs mr-2"> (مطلوب)</span>}
+                        </p>
+                        <p className="text-gray-500 text-xs">
+                          {group.selectionMode === "single" ? "اختار واحد" : `اختار حتى ${group.max || "∞"}`}
+                        </p>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {group.options.map((opt) => {
+                          const isSelected = selected.includes(opt.id);
+                          return (
+                            <motion.button
+                              key={opt.id}
+                              whileHover={{ scale: 1.03 }}
+                              whileTap={{ scale: 0.97 }}
+                              onClick={() => handleModifierToggle(group.id, opt.id, group.selectionMode)}
+                              className={`relative flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                                isSelected
+                                  ? "bg-gradient-to-r from-orange-500/20 to-red-500/20 border-2 border-orange-500 text-white"
+                                  : "bg-dark-800/60 border border-orange-500/15 text-gray-400 hover:border-orange-500/40 hover:text-gray-200"
+                              }`}
+                            >
+                              {/* Check indicator */}
+                              <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                                isSelected
+                                  ? "border-orange-500 bg-orange-500"
+                                  : "border-gray-600"
+                              }`}>
+                                {isSelected && (
+                                  <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                  </svg>
+                                )}
+                              </span>
+                              {/* Option image */}
+                              {opt.image && opt.image.startsWith("http") && (
+                                <img src={opt.image} alt={opt.name} className="w-7 h-7 rounded-lg object-cover flex-shrink-0" />
+                              )}
+                              <span className="truncate">{opt.name}</span>
+                              {Number(opt.priceDelta || 0) > 0 && (
+                                <span className="text-orange-400 text-xs font-bold ml-auto flex-shrink-0">
+                                  +{Number(opt.priceDelta).toFixed(0)}ج
+                                </span>
+                              )}
+                            </motion.button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </motion.div>
+            )}
+
             {/* Price */}
             <div className="glass p-5 rounded-xl border border-orange-500/20">
-              <p className="text-gray-400 text-sm mb-1">Price</p>
-              <p className="text-4xl font-black gradient-text">{getSelectedPrice()?.toFixed(2)} ج</p>
+              <p className="text-gray-400 text-sm mb-1">السعر الإجمالي</p>
+              <div className="flex items-baseline gap-3">
+                <p className="text-4xl font-black gradient-text">{getTotalPrice()?.toFixed(2)} ج</p>
+                {getModifiersTotal() > 0 && (
+                  <p className="text-gray-500 text-xs">
+                    ({getSelectedPrice()?.toFixed(2)} + {getModifiersTotal().toFixed(2)} إضافات)
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* Add to Cart */}

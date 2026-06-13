@@ -16,11 +16,11 @@ const CategoriesTab = ({
         <input placeholder="اسم الكاتيجوري" value={catForm.name} onChange={(e) => setCatForm({ ...catForm, name: e.target.value })} className="px-4 py-3 bg-dark-800/50 border border-orange-500/30 rounded-lg focus:outline-none focus:border-orange-500 text-white" />
         <div className="space-y-2">
           <p className="text-sm font-semibold text-gray-300">اختر أيقونة:</p>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-1 scrollbar-hide">
             {EMOJI_LIST.map((emoji) => (
-              <motion.button key={emoji} whileTap={{ scale: 0.9 }} onClick={() => setCatForm({ ...catForm, icon: emoji })}
-                className={`w-10 h-10 rounded-lg text-xl transition-all ${catForm.icon === emoji ? "bg-orange-500 border-2 border-orange-300" : "bg-dark-800/50 border border-orange-500/20 hover:border-orange-500/50"}`}
-              >{emoji}</motion.button>
+              <motion.button key={emoji === "" ? "none" : emoji} whileTap={{ scale: 0.9 }} onClick={() => setCatForm({ ...catForm, icon: emoji })}
+                className={`w-10 h-10 flex items-center justify-center flex-shrink-0 rounded-lg text-xl transition-all ${catForm.icon === emoji ? "bg-orange-500 border-2 border-orange-300" : "bg-dark-800/50 border border-orange-500/20 hover:border-orange-500/50"}`}
+              >{emoji === "" ? "🚫" : emoji}</motion.button>
             ))}
           </div>
         </div>

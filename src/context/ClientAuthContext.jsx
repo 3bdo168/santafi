@@ -9,7 +9,7 @@ import {
   updateProfile,
 } from "firebase/auth";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
-import { auth, db } from "../firebase";
+import { auth, db, hasRealFirebaseConfig } from "../firebase";
 
 const ClientAuthContext = createContext();
 
@@ -22,6 +22,11 @@ export const ClientAuthProvider = ({ children }) => {
   const [clientLoading, setClientLoading] = useState(true);
 
   useEffect(() => {
+    if (!hasRealFirebaseConfig) {
+      setClientLoading(false);
+      return;
+    }
+
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {

@@ -100,32 +100,3 @@ export const badgeVariants = {
   },
 };
 
-// Loader variants
-export const loaderVariants = {
-  animate: {
-    rotate: 360,
-    transition: {
-      duration: 2,
-      repeat: Infinity,
-      ease: "linear",
-    },
-  },
-};
-
-// Parallax variants
-export const parallaxVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      duration: 0.8,
-    },
-  },
-};
-
-// Custom page transition
-export const pageVariants = {
-  initial: { opacity: 0 },
-  animate: { opacity: 1 },
-  exit: { opacity: 0 },
-};

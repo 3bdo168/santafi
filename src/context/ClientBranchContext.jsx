@@ -29,8 +29,13 @@ const ClientBranchContext = createContext();
 
 export const ClientBranchProvider = ({ children }) => {
   const [selectedBranch, setSelectedBranchState] = useState(() => {
-    const saved = sessionStorage.getItem("selectedBranch");
-    return saved ? JSON.parse(saved) : null;
+    try {
+      const saved = sessionStorage.getItem("selectedBranch");
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      sessionStorage.removeItem("selectedBranch");
+      return null;
+    }
   });
 
   const setSelectedBranch = (branch) => {

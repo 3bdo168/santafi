@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, Link } from "react-router-dom";
 import { useClientAuth } from "../context/ClientAuthContext";
+import { hasRealFirebaseConfig } from "../firebase";
 
 const LOGO_URL =
   "https://res.cloudinary.com/dkgiwnpfi/image/upload/v1774112719/Screenshot_2026-03-21_184621-removebg-preview_zzpxcw.png";
@@ -51,11 +52,16 @@ const Login = () => {
 
   const handleGoogle = async () => {
     setError("");
+    if (!hasRealFirebaseConfig) {
+      setError("إعدادات Firebase مش متظبطة. تأكد من ملف .env");
+      return;
+    }
     setLoading(true);
     try {
       await loginWithGoogle();
       navigate("/home");
     } catch (err) {
+      console.error("Google login error:", err.code, err.message);
       setError(getErrorMessage(err.code));
     } finally {
       setLoading(false);
@@ -72,7 +78,12 @@ const Login = () => {
       case "auth/too-many-requests": return "محاولات كتير، جرّب بعد شوية";
       case "auth/network-request-failed": return "مشكلة في الإنترنت، تأكد من الاتصال";
       case "auth/popup-closed-by-user": return "قفلت نافذة Google قبل ما تكمّل";
-      default: return "حصل خطأ، حاول تاني";
+      case "auth/popup-blocked": return "المتصفح بلوك البوب أب، فعّلها وجرب تاني";
+      case "auth/unauthorized-domain": return "الدومين ده مش مضاف في Firebase Console. ضيف الدومين في Authentication → Settings → Authorized Domains";
+      case "auth/cancelled-popup-request": return "تم إلغاء طلب تسجيل الدخول، جرب تاني";
+      case "auth/internal-error": return "خطأ داخلي في Firebase، تأكد من إعدادات المشروع";
+      case "auth/operation-not-allowed": return "تسجيل الدخول بـ Google مش مفعّل. فعّله من Firebase Console → Authentication → Sign-in method";
+      default: return `حصل خطأ (${code || "unknown"}), حاول تاني`;
     }
   };
 

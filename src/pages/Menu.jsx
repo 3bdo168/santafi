@@ -1,4 +1,8 @@
-// src/pages/Menu.jsx
+/**
+ * Branch menu page.
+ * Loads products and categories from Firestore for the selected branch,
+ * with optional sessionStorage caching to reduce repeat network calls.
+ */
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useClientBranch } from "../context/ClientBranchContext";
@@ -28,15 +32,22 @@ const Menu = () => {
     const fetchData = async () => {
       setLoading(true);
 
-      // ✅ جرب تجيب من الـ cache الأول
+      // Prefer a valid session cache; ignore empty or corrupt payloads.
       const cacheKey = `menu_${selectedBranch.id}`;
       const cached = sessionStorage.getItem(cacheKey);
       if (cached) {
-        const { products: cachedProducts, categories: cachedCategories } = JSON.parse(cached);
-        setProducts(cachedProducts);
-        setCategories(cachedCategories);
-        setLoading(false);
-        return;
+        try {
+          const { products: cachedProducts, categories: cachedCategories } = JSON.parse(cached);
+          if (cachedProducts?.length > 0) {
+            setProducts(cachedProducts);
+            setCategories(cachedCategories);
+            setLoading(false);
+            return;
+          }
+          sessionStorage.removeItem(cacheKey);
+        } catch {
+          sessionStorage.removeItem(cacheKey);
+        }
       }
 
       try {
@@ -44,11 +55,13 @@ const Menu = () => {
         const { products: fetchedProducts, categories: fetchedCategories } =
           await getBranchMenuData(branchId);
 
-        // ✅ احفظ في sessionStorage عشان المرة الجاية تكون سريعة
-        sessionStorage.setItem(cacheKey, JSON.stringify({
-          products: fetchedProducts,
-          categories: fetchedCategories,
-        }));
+        // Only persist successful non-empty responses to avoid sticky empty states.
+        if (fetchedProducts.length > 0) {
+          sessionStorage.setItem(cacheKey, JSON.stringify({
+            products: fetchedProducts,
+            categories: fetchedCategories,
+          }));
+        }
 
         setProducts(fetchedProducts);
         setCategories(fetchedCategories);
@@ -93,7 +106,6 @@ const Menu = () => {
     (p) => !p.category || !categories.find((c) => c.slug === p.category)
   );
 
-  // ── Guard ────────────────────────────
   if (!selectedBranch) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-dark-900 to-dark-800">
@@ -184,8 +196,7 @@ const Menu = () => {
           className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide"
         >
           {loading ? (
-            // ✅ Skeleton للـ categories
-            <div className="flex gap-3">
+            <div className="flex gap-3" aria-busy="true" aria-label="Loading categories">
               {[1, 2, 3, 4].map((i) => (
                 <div
                   key={i}

@@ -4,7 +4,14 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { auth, db } from "../firebase";
+import { auth, db, hasRealFirebaseConfig } from "../firebase";
+
+const UID_ACCESS_MAP = {
+  bTOLBRFh8qMbDieX7s3ICTS8iBQ2: { role: "admin", branchId: "mansoura" },
+  fhrYP1RF1hhYdVEWbcThd7pE4Ci1: { role: "admin", branchId: "mit_ghamr" },
+  xF7ZYwiFJhY3LED8PTvgEvz2Pnr1: { role: "admin", branchId: "zagazig" },
+  YgIH9e2ZW9RsLdoyH6kMwm7krAB2: { role: "owner", branchId: "" },
+};
 
 const AdminLogin = () => {
   const [email, setEmail]       = useState("");
@@ -19,20 +26,26 @@ const AdminLogin = () => {
     setError("");
 
     try {
+      if (!hasRealFirebaseConfig) {
+        setError("Firebase config ناقص في .env");
+        return;
+      }
+
       // login بالـ auth الواحد
       const userCred = await signInWithEmailAndPassword(auth, email.trim(), password);
 
       // جيب بياناته من Firestore
       const userDoc = await getDoc(doc(db, "admins", userCred.user.uid));
 
-      if (!userDoc.exists()) {
-        setError("مش مصرح لك بالدخول");
-        await auth.signOut();
-        setLoading(false);
-        return;
+      const uidAccess = UID_ACCESS_MAP[userCred.user.uid];
+      if (!userDoc.exists() && !uidAccess) {
+          setError("مش مصرح لك بالدخول");
+          await auth.signOut();
+          setLoading(false);
+          return;
       }
 
-      const data = userDoc.data();
+      const data = userDoc.exists() ? userDoc.data() : uidAccess;
       const { role, branchId } = data;
 
       // خزن في localStorage
@@ -50,7 +63,11 @@ const AdminLogin = () => {
       }
 
     } catch (err) {
-      setError("الإيميل أو الباسورد غلط");
+      if (err?.code) {
+        setError(`فشل تسجيل الدخول: ${err.code}`);
+      } else {
+        setError("الإيميل أو الباسورد غلط");
+      }
     } finally {
       setLoading(false);
     }

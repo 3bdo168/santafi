@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 
-const FREE_DELIVERY_THRESHOLD = Number(process.env.REACT_APP_FREE_DELIVERY_THRESHOLD || 0);
+const FREE_DELIVERY_THRESHOLD = Number(import.meta.env.VITE_FREE_DELIVERY_THRESHOLD || 0);
 
 const CartSidebar = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
@@ -60,12 +60,12 @@ const CartSidebar = ({ isOpen, onClose }) => {
               ) : (
                 cart.map((item) => (
                   <motion.div
-                    key={item.id}
+                    key={item._cartKey || item.id}
                     layout
                     initial={{ opacity: 0, x: 50 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 50 }}
-                    className="flex items-center gap-4 glass p-4 rounded-xl border border-orange-500/20"
+                    className="flex items-start gap-4 glass p-4 rounded-xl border border-orange-500/20"
                   >
                     <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
                             {item.image && item.image.startsWith("http") ? (
@@ -78,7 +78,21 @@ const CartSidebar = ({ isOpen, onClose }) => {
                             </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-white truncate">{item.name}</p>
-                      <p className="text-orange-400 text-sm font-bold">
+                      {/* ✅ Show modifiers */}
+                      {item.selectedModifiers && item.selectedModifiers.length > 0 && (
+                        <div className="mt-1 space-y-0.5">
+                          {item.selectedModifiers.map((mod, idx) => (
+                            <p key={idx} className="text-gray-500 text-xs flex items-center gap-1">
+                              <span className="text-orange-400/60">+</span>
+                              {mod.optionName}
+                              {Number(mod.priceDelta || 0) > 0 && (
+                                <span className="text-orange-400/80">({mod.priceDelta}ج)</span>
+                              )}
+                            </p>
+                          ))}
+                        </div>
+                      )}
+                      <p className="text-orange-400 text-sm font-bold mt-1">
                         {(item.price_single * item.qty).toFixed(2)}
                       </p>
                     </div>
@@ -86,7 +100,7 @@ const CartSidebar = ({ isOpen, onClose }) => {
                     <div className="flex items-center gap-2">
                       <motion.button
                         whileTap={{ scale: 0.9 }}
-                        onClick={() => updateQty(item.id, item.qty - 1)}
+                        onClick={() => updateQty(item._cartKey || item.id, item.qty - 1)}
                         className="w-7 h-7 rounded-full bg-orange-500/20 text-orange-400 font-bold hover:bg-orange-500/40 transition-colors"
                       >
                         −
@@ -94,7 +108,7 @@ const CartSidebar = ({ isOpen, onClose }) => {
                       <span className="text-white font-bold w-5 text-center">{item.qty}</span>
                       <motion.button
                         whileTap={{ scale: 0.9 }}
-                        onClick={() => updateQty(item.id, item.qty + 1)}
+                        onClick={() => updateQty(item._cartKey || item.id, item.qty + 1)}
                         className="w-7 h-7 rounded-full bg-orange-500/20 text-orange-400 font-bold hover:bg-orange-500/40 transition-colors"
                       >
                         +
@@ -103,7 +117,7 @@ const CartSidebar = ({ isOpen, onClose }) => {
                     {/* Remove */}
                     <motion.button
                       whileTap={{ scale: 0.9 }}
-                      onClick={() => removeFromCart(item.id)}
+                      onClick={() => removeFromCart(item._cartKey || item.id)}
                       className="text-red-400 hover:text-red-300 transition-colors text-lg"
                     >
                       🗑️

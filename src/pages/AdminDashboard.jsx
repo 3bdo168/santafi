@@ -16,13 +16,19 @@ import ArchiveTab from "../components/admin/ArchiveTab";
 import CouponsTab from "../components/admin/CouponsTab";
 import DeliveryZonesTab from "../components/admin/DeliveryZonesTab";
 import RecommendationsTab from "../components/admin/RecommendationsTab";
+import ModifiersTab from "../components/admin/ModifiersTab";
+import OffersTab from "../components/admin/OffersTab";
 import { validateProductDiscount } from "../utils/pricing";
 
 const CLOUDINARY_CLOUD = "dkgiwnpfi";
 const CLOUDINARY_PRESET = "santafi_products";
 const EMOJI_LIST = [
-  "🍔","🍗","🍟","🌮","🌯","🍕","🥗","🍣","🥩","🍖",
+  "", "🍔","🍗","🍟","🌮","🌯","🍕","🥗","🍣","🥩","🍖",
   "🌶️","🧆","🥙","🍱","🧁","🍰","🥤","☕","🧃","🍜",
+  "🥓","🌭","🥪","🥨","🥐","🥯","🥞","🧇","🧀","🍲",
+  "🍛","🍚","🍙","🍘","🍢","🍡","🍧","🍨","🍦","🥧",
+  "🍫","🍬","🍭","🍮","🍯","🍷","🍸","🍹","🍺","🍻",
+  "🥂","🥃","🧊","🍽️","🍴","🥄","🍉","🍓","🔥","⭐",
 ];
 const BRANCH_NAMES = { mansoura: "المنصورة", mit_ghamr: "ميت غمر", zagazig: "الزقازيق" };
 
@@ -362,11 +368,17 @@ const DashboardContent = ({ branchId }) => {
 
       {/* Tabs */}
       <div className="flex gap-3 px-6 pt-6 overflow-x-auto">
-        {["products","categories","recommendations","coupons","delivery","orders","archive"].map((tab) => (
+        {["products","categories","modifiers","offers","recommendations","coupons","delivery","orders","archive"].map((tab) => (
           <motion.button key={tab} whileTap={{ scale: 0.95 }} onClick={() => setActiveTab(tab)}
             className={`px-6 py-3 rounded-xl font-bold capitalize transition-all whitespace-nowrap ${activeTab === tab ? "bg-gradient-to-r from-orange-500 to-red-500 text-white" : "glass border border-orange-500/20 text-gray-300 hover:border-orange-500/50"}`}
           >
-            {tab === "products" ? "🍔 المنتجات" : tab === "categories" ? "🗂️ الكاتيجوريز" : tab === "coupons" ? "🎟️ الكوبونات" : tab === "recommendations" ? "🌟 الترشيحات" : tab === "delivery" ? "🚚 التوصيل"
+            {tab === "products" ? "🍔 المنتجات"
+              : tab === "categories" ? "🗂️ الكاتيجوريز"
+              : tab === "modifiers" ? "🧩 الإضافات"
+              : tab === "offers" ? "⏱️ العروض"
+              : tab === "coupons" ? "🎟️ الكوبونات"
+              : tab === "recommendations" ? "🌟 الترشيحات"
+              : tab === "delivery" ? "🚚 التوصيل"
               : tab === "archive" ? (
                 <span className="flex items-center gap-2">📁 الأرشيف{archivedOrders.length > 0 && <span className="bg-gray-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">{archivedOrders.length}</span>}</span>
               ) : (
@@ -382,6 +394,12 @@ const DashboardContent = ({ branchId }) => {
         )}
         {activeTab === "categories" && (
           <CategoriesTab catForm={catForm} setCatForm={setCatForm} EMOJI_LIST={EMOJI_LIST} handleAddCategory={handleAddCategory} catLoading={catLoading} categories={categories} handleDeleteCategory={handleDeleteCategory} />
+        )}
+        {activeTab === "modifiers" && (
+          <ModifiersTab branchId={branchId} products={products} />
+        )}
+        {activeTab === "offers" && (
+          <OffersTab branchId={branchId} />
         )}
         {activeTab === "coupons" && (
           <CouponsTab couponForm={couponForm} setCouponForm={setCouponForm} coupons={coupons} onAdd={handleAddCoupon} onDelete={handleDeleteCoupon} />

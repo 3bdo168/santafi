@@ -13,13 +13,8 @@ import { useCart } from "../context/CartContext";
 import { calculateCartSubtotal, calculateFinalTotals } from "../utils/pricing";
 import RecommendationsPopup from "../components/RecommendationsPopup";
 
-const PAYMOB_API_KEY = process.env.REACT_APP_PAYMOB_API_KEY;
-const WALLET_INTEGRATION_ID = process.env.REACT_APP_PAYMOB_WALLET_INTEGRATION_ID;
-const CARD_INTEGRATION_ID = process.env.REACT_APP_PAYMOB_CARD_INTEGRATION_ID;
-const CARD_IFRAME_ID = process.env.REACT_APP_PAYMOB_CARD_IFRAME_ID;
-const WALLET_IFRAME_ID = process.env.REACT_APP_PAYMOB_WALLET_IFRAME_ID;
-const MANUAL_PAYMENT_PHONE = process.env.REACT_APP_MANUAL_PAYMENT_PHONE || "01091873443";
-const FREE_DELIVERY_THRESHOLD = Number(process.env.REACT_APP_FREE_DELIVERY_THRESHOLD || 0);
+const MANUAL_PAYMENT_PHONE = import.meta.env.VITE_MANUAL_PAYMENT_PHONE || "01091873443";
+const FREE_DELIVERY_THRESHOLD = Number(import.meta.env.VITE_FREE_DELIVERY_THRESHOLD || 0);
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -185,14 +180,12 @@ const Checkout = () => {
     }
   };
 
-  // ✅ نولّد ID واحد ونستخدمه في الـ collections الاتنين + نرجّعه
   const saveOrder = async (extraData = {}) => {
     const branchId = selectedBranch?.id;
     if (!branchId) throw new Error("لم يتم اختيار الفرع!");
 
-    // ✅ نعمل ref بـ ID عشوائي جديد من collection الفرع
     const newOrderRef = doc(collection(db, branchId, "orders", "data"));
-    const sharedId = newOrderRef.id; // نفس الـ ID هنحطه في all_orders
+    const sharedId = newOrderRef.id;
     const orderData = buildOrderData({ ...extraData, orderId: sharedId });
 
     await Promise.all([
@@ -204,106 +197,6 @@ const Checkout = () => {
     return sharedId;
   };
 
-  const handlePaymob = async () => {
-    setLoading(true);
-    try {
-      if (paymentMethod !== "card" && paymentMethod !== "wallet") {
-        throw new Error("طريقة دفع Paymob غير صحيحة");
-      }
-
-      // 1) احفظ الأوردر كـ pending_payment (قبل الدفع) بنفس الـ ID
-      const sharedId = await saveOrder({
-        status: "pending_payment",
-        paymentStatus: "initiated",
-        paymentProvider: "paymob",
-      });
-      sessionStorage.setItem("pendingPaymobOrderId", sharedId);
-
-      // 2) Paymob auth
-      const authRes = await fetch("https://accept.paymob.com/api/auth/tokens", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ api_key: PAYMOB_API_KEY }),
-      });
-      const authData = await authRes.json();
-      const token = authData.token;
-      if (!token) throw new Error("Paymob auth failed");
-
-      // 3) Register Paymob order (bind merchant_order_id to Firestore id)
-      const orderRes = await fetch("https://accept.paymob.com/api/ecommerce/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          auth_token: token,
-          delivery_needed: false,
-          amount_cents: Math.round(totals.total * 100),
-          currency: "EGP",
-          merchant_order_id: sharedId,
-          items: cart.map((i) => ({
-            name: i.name,
-            amount_cents: Math.round(i.price_single * 100),
-            description: i.description || i.name,
-            quantity: i.qty,
-          })),
-        }),
-      });
-      const orderData = await orderRes.json();
-      const orderId = orderData.id;
-      if (!orderId) throw new Error("Paymob order creation failed");
-
-      const nameParts = formData.name.split(" ");
-      const paymentKeyRes = await fetch("https://accept.paymob.com/api/acceptance/payment_keys", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          auth_token: token,
-          amount_cents: Math.round(totals.total * 100),
-          expiration: 3600,
-          order_id: orderId,
-          billing_data: {
-            apartment: "NA", email: "customer@santafe.com", floor: "NA",
-            first_name: nameParts[0] || formData.name,
-            last_name: nameParts[1] || "Customer",
-            street: formData.address, building: "NA",
-            phone_number: formData.phone, shipping_method: "NA",
-            postal_code: "NA", city: "Cairo", country: "EG", state: "Cairo",
-          },
-          currency: "EGP",
-          integration_id: paymentMethod === "card" ? CARD_INTEGRATION_ID : WALLET_INTEGRATION_ID,
-          lock_order_when_paid: false,
-        }),
-      });
-      const paymentKeyData = await paymentKeyRes.json();
-      const paymentKey = paymentKeyData.token;
-      if (!paymentKey) throw new Error("Paymob payment key failed");
-
-      // 4) خزّن Paymob order id على نفس الأوردر (branch + all_orders)
-      await Promise.all([
-        setDoc(
-          doc(db, selectedBranch.id, "orders", "data", sharedId),
-          { paymobOrderId: String(orderId), paymentStatus: "initiated" },
-          { merge: true }
-        ),
-        setDoc(
-          doc(db, "all_orders", sharedId),
-          { paymobOrderId: String(orderId), paymentStatus: "initiated" },
-          { merge: true }
-        ),
-      ]);
-
-      if (paymentMethod === "wallet") {
-        window.location.href = `https://accept.paymob.com/api/acceptance/iframes/${WALLET_IFRAME_ID}?payment_token=${paymentKey}`;
-      } else {
-        window.location.href = `https://accept.paymob.com/api/acceptance/iframes/${CARD_IFRAME_ID}?payment_token=${paymentKey}`;
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Payment failed. Please try again!");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handlePlaceOrder = async () => {
     if (!clientUser?.uid) {
       alert("لازم تسجل دخول الأول عشان تقدر تتابع أوردراتك.");
@@ -311,24 +204,16 @@ const Checkout = () => {
       return;
     }
 
-    // Paymob methods are disabled in this build
-    if (paymentMethod === "card" || paymentMethod === "wallet") {
-      alert("طريقة الدفع دي غير متاحة حالياً.");
-      return;
-    }
-
-    {
-      setLoading(true);
-      try {
-        await saveOrder();
-        setStep(3);
-        clearCart();
-      } catch (err) {
-        console.error(err);
-        alert("Failed to place order. Try again!");
-      } finally {
-        setLoading(false);
-      }
+    setLoading(true);
+    try {
+      await saveOrder();
+      setStep(3);
+      clearCart();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to place order. Try again!");
+    } finally {
+      setLoading(false);
     }
   };
 

@@ -1,3 +1,8 @@
+/**
+ * Firebase client bootstrap.
+ * Configuration is read from Vite env vars (VITE_FIREBASE_*).
+ * Dev fallbacks apply only when those variables are missing.
+ */
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getAuth } from "firebase/auth";
@@ -5,19 +10,34 @@ import { getFirestore } from "firebase/firestore";
 import { getFunctions } from "firebase/functions";
 
 const firebaseConfig = {
-  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
-  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.REACT_APP_FIREBASE_APP_ID,
-  measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID,
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "dev-api-key",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "dev.local",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "dev-project",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "dev-project.appspot.com",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "000000000000",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:000000000000:web:devapp",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
+/** True when production Firebase credentials are present in .env */
+const hasRealFirebaseConfig = Boolean(
+  import.meta.env.VITE_FIREBASE_API_KEY &&
+    import.meta.env.VITE_FIREBASE_AUTH_DOMAIN &&
+    import.meta.env.VITE_FIREBASE_PROJECT_ID &&
+    import.meta.env.VITE_FIREBASE_APP_ID
+);
+
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+let analytics = null;
+try {
+  if (typeof window !== "undefined" && hasRealFirebaseConfig && firebaseConfig.measurementId) {
+    analytics = getAnalytics(app);
+  }
+} catch {
+  analytics = null;
+}
 const auth = getAuth(app);
 const db = getFirestore(app);
 const functions = getFunctions(app);
 
-export { app, analytics, auth, db, functions };
+export { app, analytics, auth, db, functions, hasRealFirebaseConfig };
