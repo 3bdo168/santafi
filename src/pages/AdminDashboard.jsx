@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { useBranch } from "../context/BranchContext";
 import ProductsTab from "../components/admin/ProductsTab";
 import CategoriesTab from "../components/admin/CategoriesTab";
+import ImageCropperModal from "../components/admin/ImageCropperModal";
 import OrdersTab from "../components/admin/OrdersTab";
 import ArchiveTab from "../components/admin/ArchiveTab";
 import CouponsTab from "../components/admin/CouponsTab";
@@ -88,6 +89,8 @@ const DashboardContent = ({ branchId }) => {
   const [loading, setLoading]               = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
   const [notification, setNotification]     = useState(null);
+  const [cropperSrc, setCropperSrc]         = useState(null);
+  const [showCropper, setShowCropper]       = useState(false);
 
   const prevOrdersCount = useRef(null);
   const isFirstLoad     = useRef(true);
@@ -161,12 +164,24 @@ const DashboardContent = ({ branchId }) => {
     await deleteDoc(doc(db, branchId, "categories", "data", id));
     fetchCategories();
   };
-  const handleImageUpload = async (e) => {
+  const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    e.target.value = ""; // Reset so the same file triggers change again
+    const reader = new FileReader();
+    reader.onload = () => {
+      setCropperSrc(reader.result);
+      setShowCropper(true);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCroppedUpload = async (croppedBlob) => {
+    setShowCropper(false);
+    setCropperSrc(null);
     setImageUploading(true);
     const data = new FormData();
-    data.append("file", file);
+    data.append("file", croppedBlob, "cropped_product.jpg");
     data.append("upload_preset", CLOUDINARY_PRESET);
     try {
       const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, { method: "POST", body: data });
@@ -434,6 +449,16 @@ const DashboardContent = ({ branchId }) => {
           />
         )}
       </div>
+
+      <ImageCropperModal
+        isOpen={showCropper}
+        src={cropperSrc}
+        onCancel={() => {
+          setShowCropper(false);
+          setCropperSrc(null);
+        }}
+        onSave={handleCroppedUpload}
+      />
     </div>
   );
 };

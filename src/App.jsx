@@ -17,6 +17,7 @@ import ProductDetails from "./pages/ProductDetails";
 import Login from "./pages/Login";
 import Offers from "./pages/Offers";
 import Profile from "./pages/Profile";
+import MyOrders from "./pages/MyOrders";
 
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const OwnerDashboard = lazy(() => import("./pages/OwnerDashboard"));
@@ -93,6 +94,7 @@ function App() {
                   <Route element={<RequireBranch><ClientLayout /></RequireBranch>}>
                     <Route path="/home" element={<Home />} />
                     <Route path="/profile" element={<Profile />} />
+                    <Route path="/my-orders" element={<MyOrders />} />
                     <Route path="/menu" element={<Menu />} />
                     <Route path="/offers" element={<Offers />} />
                     <Route path="/about" element={<About />} />

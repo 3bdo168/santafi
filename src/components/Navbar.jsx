@@ -126,6 +126,16 @@ const Navbar = ({ totalItems = 0, onCartClick, showOffersTab = false }) => {
                       </motion.div>
                     </Link>
                     <div className="h-px mx-3" style={{ background: "rgba(255,255,255,0.06)" }} />
+                    <Link to="/my-orders" onClick={() => setDropdownOpen(false)}>
+                      <motion.div
+                        whileHover={{ background: "rgba(255,215,0,0.08)" }}
+                        className="flex items-center gap-2 px-4 py-3 text-sm text-gray-300 cursor-pointer transition-all"
+                      >
+                        <span style={{ WebkitTextFillColor: 'initial', color: 'initial' }}>📦</span>
+                        <span>طلباتي</span>
+                      </motion.div>
+                    </Link>
+                    <div className="h-px mx-3" style={{ background: "rgba(255,255,255,0.06)" }} />
                     <motion.div
                       whileHover={{ background: "rgba(139,0,0,0.15)" }}
                       onClick={handleLogout}
@@ -180,6 +190,7 @@ const Navbar = ({ totalItems = 0, onCartClick, showOffersTab = false }) => {
             {clientUser ? (
               <>
                 <NavLink to="/profile" label={<><span style={{ WebkitTextFillColor: 'initial', color: 'initial' }}>👤</span> حسابي</>} mobile />
+                <NavLink to="/my-orders" label={<><span style={{ WebkitTextFillColor: 'initial', color: 'initial' }}>📦</span> طلباتي</>} mobile />
                 <motion.div
                   onClick={handleLogout}
                   whileTap={{ scale: 0.95 }}

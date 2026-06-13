@@ -984,6 +984,7 @@ const StatusBadge = ({ status }) => {
   const map = {
     pending: { label: "انتظار", cls: "bg-orange-800 text-orange-300" },
     preparing: { label: "تحضير 🔥", cls: "bg-amber-800 text-amber-300" },
+    out_for_delivery: { label: "خرج للتوصيل 🛵", cls: "bg-purple-800 text-purple-300" },
     done: { label: "تم ✅", cls: "bg-green-800  text-green-300" },
     delivered: { label: "تم ✅", cls: "bg-green-800  text-green-300" },
     cancelled: { label: "ملغي ❌", cls: "bg-red-800    text-red-300" },

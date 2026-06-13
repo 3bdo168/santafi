@@ -58,7 +58,9 @@ const OrderCard = ({
                     ? "bg-red-500/20 text-red-400"
                     : order.status === "preparing"
                       ? "bg-yellow-500/20 text-yellow-400"
-                      : "bg-orange-500/20 text-orange-400"
+                      : order.status === "out_for_delivery"
+                        ? "bg-purple-500/20 text-purple-400"
+                        : "bg-orange-500/20 text-orange-400"
         }`}>
           {order.status === "pending_payment" ? "🔒 في انتظار الدفع"
           : order.status === "delivered" ? "✅ تم التوصيل"
@@ -66,6 +68,7 @@ const OrderCard = ({
           : order.status === "done" ? "✅ تم"
           : order.status === "cancelled" ? "❌ ملغي"
           : order.status === "preparing" ? "🔥 قيد التحضير"
+          : order.status === "out_for_delivery" ? "🛵 خرج للتوصيل"
           : "⏳ انتظار"}
         </span>
       </div>
@@ -96,7 +99,7 @@ const OrderCard = ({
       </div>
     )}
 
-    {/* ── Orders Actions (pending / preparing) ── */}
+    {/* ── Orders Actions (pending / preparing / out_for_delivery) ── */}
     {showActions === true &&
       order.status !== "delivered" &&
       order.status !== "done" &&
@@ -111,6 +114,13 @@ const OrderCard = ({
           >🔥 قيد التحضير</motion.button>
         )}
         {order.status === "preparing" && (
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={() => handleUpdateStatus(order.id, "out_for_delivery")}
+            className="flex-1 py-2 bg-purple-500/20 border border-purple-500/40 text-purple-400 rounded-lg hover:bg-purple-500/30 transition-all text-sm font-semibold"
+          >🛵 خرج للتوصيل</motion.button>
+        )}
+        {order.status === "out_for_delivery" && (
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={() => handleUpdateStatus(order.id, "delivered")}

@@ -7,13 +7,14 @@ import { db } from "../firebase";
 import { useClientAuth } from "../context/ClientAuthContext";
 
 const statusColors = {
-  pending:   { bg: "rgba(255,193,7,0.15)",  border: "rgba(255,193,7,0.4)",  text: "#FFC107", label: "⏳ قيد الانتظار" },
-  preparing: { bg: "rgba(255,152,0,0.15)",  border: "rgba(255,152,0,0.4)",  text: "#FF9800", label: "🔥 قيد التحضير" },
-  confirmed: { bg: "rgba(33,150,243,0.15)", border: "rgba(33,150,243,0.4)", text: "#2196F3", label: "✅ تم التأكيد" },
-  done:      { bg: "rgba(76,175,80,0.15)",  border: "rgba(76,175,80,0.4)",  text: "#4CAF50", label: "✅ جاهز/تم" },
-  delivered: { bg: "rgba(76,175,80,0.15)",  border: "rgba(76,175,80,0.4)",  text: "#4CAF50", label: "🎉 تم التوصيل" },
-  rejected:  { bg: "rgba(244,67,54,0.15)",  border: "rgba(244,67,54,0.4)",  text: "#F44336", label: "❌ مرفوض" },
-  cancelled: { bg: "rgba(244,67,54,0.15)",  border: "rgba(244,67,54,0.4)",  text: "#F44336", label: "❌ ملغي" },
+  pending:            { bg: "rgba(255,193,7,0.15)",  border: "rgba(255,193,7,0.4)",  text: "#FFC107", label: "⏳ قيد الانتظار" },
+  preparing:          { bg: "rgba(255,152,0,0.15)",  border: "rgba(255,152,0,0.4)",  text: "#FF9800", label: "🔥 قيد التحضير" },
+  confirmed:          { bg: "rgba(33,150,243,0.15)", border: "rgba(33,150,243,0.4)", text: "#2196F3", label: "✅ تم التأكيد" },
+  out_for_delivery:   { bg: "rgba(156,39,176,0.15)", border: "rgba(156,39,176,0.4)", text: "#9C27B0", label: "🛵 خرج للتوصيل" },
+  done:               { bg: "rgba(76,175,80,0.15)",  border: "rgba(76,175,80,0.4)",  text: "#4CAF50", label: "✅ جاهز/تم" },
+  delivered:          { bg: "rgba(76,175,80,0.15)",  border: "rgba(76,175,80,0.4)",  text: "#4CAF50", label: "🎉 تم التوصيل" },
+  rejected:           { bg: "rgba(244,67,54,0.15)",  border: "rgba(244,67,54,0.4)",  text: "#F44336", label: "❌ مرفوض" },
+  cancelled:          { bg: "rgba(244,67,54,0.15)",  border: "rgba(244,67,54,0.4)",  text: "#F44336", label: "❌ ملغي" },
 };
 
 const Profile = () => {
@@ -171,7 +172,13 @@ const Profile = () => {
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => {
+                if (tab.id === "orders") {
+                  navigate("/my-orders");
+                } else {
+                  setActiveTab(tab.id);
+                }
+              }}
               className="flex-1 py-3 rounded-lg font-bold text-sm transition-all duration-300"
               style={
                 activeTab === tab.id
