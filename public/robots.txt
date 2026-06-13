@@ -1,5 +1,10 @@
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /admin-dashboard
+Disallow: /owner
+Disallow: /checkout
+Disallow: /my-orders
+Disallow: /profile
 
-# Update this to your production domain if changed
-Sitemap: https://santafe-eg.com/sitemap.xml
+Sitemap: https://santafe-fried.netlify.app/sitemap.xml

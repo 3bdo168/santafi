@@ -25,8 +25,10 @@ const Home = () => {
   return (
     <div className="min-h-screen">
 
-      {/* Hero Section */}
+      {/* ─── Hero Section ─── */}
       <motion.section
+        id="hero"
+        aria-label="قسم الترحيب بسانتافيه"
         className="relative min-h-screen flex items-center justify-center overflow-hidden px-4 py-20"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -62,7 +64,7 @@ const Home = () => {
           <motion.div variants={itemVariants} className="flex justify-center mb-8">
             <motion.img
               src={LOGO_URL}
-              alt="santafe"
+              alt="شعار مطعم سانتافيه"
               className="w-40 h-40 object-contain drop-shadow-2xl"
               animate={{ y: [0, -10, 0] }}
               transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
@@ -82,17 +84,16 @@ const Home = () => {
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.8, delay: 0.2 }}
             >
-              santafe
+              سانتافيه
             </motion.h1>
             <p className="text-xl md:text-2xl font-semibold" style={{ color: "#FFD700" }}>
-              Fried Chicken & Burger 🔥
+              أفضل فرايد تشيكن وبرجر في المنصورة وميت غمر والزقازيق 🔥
             </p>
           </motion.div>
 
           <motion.div variants={itemVariants} className="mb-12">
             <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
-              Discover the most delicious, crispy, and flavorful fast-food experience.
-              Every bite is crafted with passion and precision.
+              استمتع بأشهى الوجبات المقرمشة المحضّرة من أجود المكونات الطازجة، مع توصيل سريع لباب بيتك في أقل من 30 دقيقة.
             </p>
           </motion.div>
 
@@ -100,24 +101,24 @@ const Home = () => {
             variants={itemVariants}
             className="flex flex-col sm:flex-row gap-4 justify-center mb-16"
           >
-            <Link to="/menu">
+            <Link to="/menu" aria-label="استعرض قائمة طعام سانتافيه">
               <motion.button
                 whileHover={{ scale: 1.05, boxShadow: "0 0 40px rgba(255, 215, 0, 0.5)" }}
                 whileTap={{ scale: 0.95 }}
                 className="px-8 py-4 font-bold rounded-xl text-lg text-black"
                 style={{ background: "linear-gradient(135deg, #FFD700, #f0a500)" }}
               >
-                View Menu →
+                شوف القائمة ←
               </motion.button>
             </Link>
-            <Link to="/menu">
+            <Link to="/menu" aria-label="اطلب الآن من سانتافيه">
               <motion.button
                 whileHover={{ scale: 1.05, backgroundColor: "rgba(139,0,0,0.2)" }}
                 whileTap={{ scale: 0.95 }}
                 className="px-8 py-4 font-bold rounded-xl text-lg transition-all"
                 style={{ border: "2px solid #8B0000", color: "#FFD700" }}
               >
-                Order Now 🛒
+                اطلب دلوقتي 🛒
               </motion.button>
             </Link>
           </motion.div>
@@ -131,6 +132,7 @@ const Home = () => {
               <motion.div
                 key={i}
                 className="text-5xl"
+                aria-hidden="true"
                 animate={{ y: [0, -15, 0] }}
                 transition={{ duration: 2, repeat: Infinity, delay: i * 0.4, ease: "easeInOut" }}
               >
@@ -141,8 +143,10 @@ const Home = () => {
         </motion.div>
       </motion.section>
 
-      {/* Features Section */}
+      {/* ─── Features Section ─── */}
       <motion.section
+        id="why-santafe"
+        aria-labelledby="features-heading"
         className="py-20 px-4 md:px-8"
         style={{ background: "linear-gradient(to bottom, #0a0a0a, #1a0505)" }}
         initial={{ opacity: 0 }}
@@ -150,11 +154,14 @@ const Home = () => {
         viewport={{ once: true }}
       >
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-4xl md:text-5xl font-bold text-center mb-4"
-            style={{ background: "linear-gradient(135deg, #FFD700, #8B0000)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-            Why Choose santafe?
+          <h2
+            id="features-heading"
+            className="text-4xl md:text-5xl font-bold text-center mb-4"
+            style={{ background: "linear-gradient(135deg, #FFD700, #8B0000)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}
+          >
+            ليه سانتافيه؟
           </h2>
-          <p className="text-center text-gray-400 mb-16">Premium quality, every single time</p>
+          <p className="text-center text-gray-400 mb-16">جودة ممتازة في كل وجبة</p>
           <motion.div
             variants={containerVariants}
             initial="hidden"
@@ -163,25 +170,27 @@ const Home = () => {
             className="grid grid-cols-1 md:grid-cols-3 gap-8"
           >
             {features.map((feature, i) => (
-              <motion.div
+              <motion.article
                 key={i}
                 variants={itemVariants}
                 whileHover={{ y: -10 }}
                 className="p-8 rounded-2xl text-center cursor-pointer group"
                 style={{ background: "rgba(10,10,10,0.8)", border: "1px solid rgba(255,215,0,0.15)" }}
               >
-                <div className="text-5xl mb-4 inline-block group-hover:scale-110 transition-transform">{feature.icon}</div>
+                <div className="text-5xl mb-4 inline-block group-hover:scale-110 transition-transform" aria-hidden="true">{feature.icon}</div>
                 <h3 className="text-xl font-bold mb-3" style={{ color: "#FFD700" }}>{feature.title}</h3>
                 <p className="text-gray-400">{feature.description}</p>
-              </motion.div>
+              </motion.article>
             ))}
           </motion.div>
         </div>
       </motion.section>
 
-      {/* New Arrivals */}
+      {/* ─── New Arrivals ─── */}
       {!loading && newProducts.length > 0 && (
         <motion.section
+          id="new-arrivals"
+          aria-labelledby="new-arrivals-heading"
           className="py-20 px-4 md:px-8"
           style={{ background: "linear-gradient(to bottom, #1a0505, #0a0a0a)" }}
           initial={{ opacity: 0 }}
@@ -191,17 +200,20 @@ const Home = () => {
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-between mb-12">
               <div>
-                <h2 className="text-4xl font-black mb-2"
-                  style={{ background: "linear-gradient(135deg, #FFD700, #f0a500)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-                  ⭐ New Arrivals
+                <h2
+                  id="new-arrivals-heading"
+                  className="text-4xl font-black mb-2"
+                  style={{ background: "linear-gradient(135deg, #FFD700, #f0a500)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}
+                >
+                  ⭐ وصل جديد
                 </h2>
-                <p className="text-gray-400">Fresh additions to our menu</p>
+                <p className="text-gray-400">أحدث الإضافات على قائمتنا</p>
               </div>
-              <Link to="/menu">
+              <Link to="/menu" aria-label="استعرض كل المنتجات الجديدة">
                 <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                   className="px-5 py-2 rounded-xl font-semibold text-sm"
                   style={{ border: "1px solid #FFD700", color: "#FFD700" }}>
-                  View All →
+                  شوف الكل ←
                 </motion.button>
               </Link>
             </div>
@@ -214,9 +226,11 @@ const Home = () => {
         </motion.section>
       )}
 
-      {/* Latest Additions */}
+      {/* ─── Latest Additions ─── */}
       {!loading && latestProducts.length > 0 && (
         <motion.section
+          id="latest"
+          aria-labelledby="latest-heading"
           className="py-20 px-4 md:px-8"
           style={{ background: "linear-gradient(to bottom, #0a0a0a, #1a0505)" }}
           initial={{ opacity: 0 }}
@@ -226,17 +240,20 @@ const Home = () => {
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-between mb-12">
               <div>
-                <h2 className="text-4xl font-black mb-2"
-                  style={{ background: "linear-gradient(135deg, #8B0000, #FFD700)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-                  Latest Additions
+                <h2
+                  id="latest-heading"
+                  className="text-4xl font-black mb-2"
+                  style={{ background: "linear-gradient(135deg, #8B0000, #FFD700)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}
+                >
+                  آخر الإضافات
                 </h2>
-                <p className="text-gray-400">The most recently added items</p>
+                <p className="text-gray-400">أحدث ما أضفناه على القائمة</p>
               </div>
-              <Link to="/menu">
+              <Link to="/menu" aria-label="استعرض كل منتجات سانتافيه">
                 <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                   className="px-5 py-2 rounded-xl font-semibold text-sm"
                   style={{ border: "1px solid #8B0000", color: "#FFD700" }}>
-                  View All →
+                  شوف الكل ←
                 </motion.button>
               </Link>
             </div>
@@ -249,8 +266,10 @@ const Home = () => {
         </motion.section>
       )}
 
-      {/* Stats */}
+      {/* ─── Stats ─── */}
       <motion.section
+        id="stats"
+        aria-label="إحصائيات سانتافيه"
         className="py-20 px-4 md:px-8"
         style={{ background: "linear-gradient(135deg, #1a0505, #0a0a0a, #1a0a00)" }}
         initial={{ opacity: 0 }}
@@ -269,7 +288,7 @@ const Home = () => {
               <motion.div key={i} variants={itemVariants} whileHover={{ scale: 1.05 }}
                 className="p-8 rounded-2xl"
                 style={{ background: "rgba(139,0,0,0.1)", border: "1px solid rgba(255,215,0,0.2)" }}>
-                <div className="text-4xl mb-3">{stat.emoji}</div>
+                <div className="text-4xl mb-3" aria-hidden="true">{stat.emoji}</div>
                 <div className="text-4xl font-black mb-2" style={{ color: "#FFD700" }}>{stat.number}</div>
                 <p className="text-gray-400 font-semibold">{stat.label}</p>
               </motion.div>
@@ -278,8 +297,10 @@ const Home = () => {
         </div>
       </motion.section>
 
-      {/* CTA */}
+      {/* ─── CTA ─── */}
       <motion.section
+        id="order-now"
+        aria-label="اطلب الآن"
         className="py-20 px-4 md:px-8"
         style={{ background: "linear-gradient(to bottom, #0a0a0a, #1a0505)" }}
         initial={{ opacity: 0 }}
@@ -289,34 +310,81 @@ const Home = () => {
         <div className="max-w-2xl mx-auto text-center">
           <motion.div whileHover={{ scale: 1.02 }} className="p-12 rounded-3xl"
             style={{ background: "rgba(10,10,10,0.9)", border: "1px solid rgba(255,215,0,0.2)" }}>
-            <div className="text-6xl mb-6">🔥</div>
+            <div className="text-6xl mb-6" aria-hidden="true">🔥</div>
             <h2 className="text-3xl md:text-4xl font-black mb-4"
               style={{ background: "linear-gradient(135deg, #FFD700, #8B0000)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-              Ready to Order?
+              جاهز تطلب؟
             </h2>
             <p className="text-gray-400 mb-8 text-lg">
-              Choose your favorites and get them delivered hot to your door
+              اختار أكلتك المفضلة واستناها ساخنة عند بابك
             </p>
-            <Link to="/menu">
+            <Link to="/menu" aria-label="اطلب من قائمة سانتافيه الآن">
               <motion.button
                 whileHover={{ scale: 1.05, boxShadow: "0 0 40px rgba(255,215,0,0.4)" }}
                 whileTap={{ scale: 0.95 }}
                 className="px-10 py-4 font-black text-lg rounded-2xl text-black"
                 style={{ background: "linear-gradient(135deg, #FFD700, #f0a500)" }}
               >
-                Order Now 🛒
+                اطلب دلوقتي 🛒
               </motion.button>
             </Link>
           </motion.div>
         </div>
       </motion.section>
 
+      {/* ─── Footer with internal links ─── */}
+      <footer
+        id="footer"
+        className="py-12 px-4 md:px-8 border-t border-white/5"
+        style={{ background: "#080808" }}
+        aria-label="روابط سانتافيه"
+      >
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+            {/* Brand */}
+            <div>
+              <h2 className="text-xl font-black mb-3" style={{ color: "#FFD700" }}>سانتافيه 🔥</h2>
+              <p className="text-gray-500 text-sm leading-relaxed">
+                أفضل فرايد تشيكن وبرجر في المنصورة وميت غمر والزقازيق. جودة ممتازة وتوصيل سريع.
+              </p>
+            </div>
+
+            {/* Navigation links */}
+            <nav aria-label="روابط التنقل الرئيسية">
+              <h3 className="text-white font-bold mb-3 text-sm uppercase tracking-wider">روابط سريعة</h3>
+              <ul className="space-y-2">
+                <li><Link to="/home" className="text-gray-500 text-sm hover:text-yellow-400 transition-colors">🏠 الرئيسية</Link></li>
+                <li><Link to="/menu" className="text-gray-500 text-sm hover:text-yellow-400 transition-colors">🍔 قائمة الطعام</Link></li>
+                <li><Link to="/about" className="text-gray-500 text-sm hover:text-yellow-400 transition-colors">ℹ️ من نحن</Link></li>
+                <li><Link to="/contact" className="text-gray-500 text-sm hover:text-yellow-400 transition-colors">📞 تواصل معنا</Link></li>
+              </ul>
+            </nav>
+
+            {/* Branches */}
+            <div>
+              <h3 className="text-white font-bold mb-3 text-sm uppercase tracking-wider">فروعنا</h3>
+              <ul className="space-y-2">
+                <li className="text-gray-500 text-sm">📍 المنصورة</li>
+                <li className="text-gray-500 text-sm">📍 ميت غمر</li>
+                <li className="text-gray-500 text-sm">📍 الزقازيق</li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="border-t border-white/5 pt-6 text-center">
+            <p className="text-gray-600 text-xs">
+              © {new Date().getFullYear()} سانتافيه. جميع الحقوق محفوظة.
+            </p>
+          </div>
+        </div>
+      </footer>
+
     </div>
   );
 };
 
 const ProductCard = ({ product, navigate }) => (
-  <motion.div
+  <motion.article
     initial={{ opacity: 0, y: 20 }}
     whileInView={{ opacity: 1, y: 0 }}
     whileHover={{ y: -8 }}
@@ -324,12 +392,18 @@ const ProductCard = ({ product, navigate }) => (
     onClick={() => navigate(`/product/${product.id}`)}
     className="cursor-pointer rounded-2xl overflow-hidden group"
     style={{ background: "rgba(10,10,10,0.8)", border: "1px solid rgba(255,215,0,0.1)" }}
+    aria-label={`منتج: ${product.name}`}
   >
     <div className="h-44 overflow-hidden">
       {product.image && product.image.startsWith("http") ? (
-        <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+        <img
+          src={product.image}
+          alt={`صورة ${product.name} من سانتافيه`}
+          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+          loading="lazy"
+        />
       ) : (
-        <div className="w-full h-full flex items-center justify-center text-5xl" style={{ background: "rgba(139,0,0,0.1)" }}>
+        <div className="w-full h-full flex items-center justify-center text-5xl" style={{ background: "rgba(139,0,0,0.1)" }} aria-hidden="true">
           {product.image || "🍔"}
         </div>
       )}
@@ -338,26 +412,26 @@ const ProductCard = ({ product, navigate }) => (
       {product.isNew && (
         <span className="text-xs font-bold px-2 py-0.5 rounded-full mb-2 inline-block"
           style={{ background: "rgba(255,215,0,0.15)", color: "#FFD700", border: "1px solid rgba(255,215,0,0.3)" }}>
-          ⭐ NEW
+          ⭐ جديد
         </span>
       )}
       <h3 className="font-bold text-white mb-1 line-clamp-1 group-hover:text-yellow-400 transition-colors">{product.name}</h3>
       <p className="text-gray-500 text-xs mb-3 line-clamp-2">{product.description}</p>
       <p className="font-black" style={{ color: "#FFD700" }}>{product.price_single?.toFixed(2)} ج</p>
     </div>
-  </motion.div>
+  </motion.article>
 );
 
 const features = [
-  { icon: "⚡", title: "Fast Delivery", description: "Get your meal delivered hot and fresh in minutes" },
-  { icon: "👑", title: "Premium Quality", description: "Only the finest ingredients for the best taste" },
-  { icon: "💳", title: "Easy Payment", description: "Secure and convenient payment options" },
+  { icon: "⚡", title: "توصيل سريع", description: "وجبتك تصلك ساخنة وطازجة في أقل من 30 دقيقة" },
+  { icon: "👑", title: "جودة ممتازة", description: "بنستخدم بس أجود المكونات الطازجة لأحسن طعم" },
+  { icon: "💳", title: "دفع سهل", description: "كاش أو فودافون كاش أو إنستاباي - على راحتك" },
 ];
 
 const stats = [
-  { emoji: "😊", number: "50K+", label: "Happy Customers" },
-  { emoji: "🍔", number: "100+", label: "Menu Items" },
-  { emoji: "⭐", number: "4.9", label: "Average Rating" },
+  { emoji: "😊", number: "50K+", label: "عميل سعيد" },
+  { emoji: "🍔", number: "100+", label: "صنف في القائمة" },
+  { emoji: "⭐", number: "4.9", label: "متوسط التقييم" },
 ];
 
 export default Home;

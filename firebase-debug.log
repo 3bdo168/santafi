@@ -1,0 +1,37 @@
+[debug] [2026-06-13T19:28:31.540Z] ----------------------------------------------------------------------
+[debug] [2026-06-13T19:28:31.544Z] Command:       C:\Users\Abdelrahman\AppData\Local\Microsoft\WinGet\Packages\OpenJS.NodeJS.LTS_Microsoft.Winget.Source_8wekyb3d8bbwe\node-v24.16.0-win-x64\node.exe C:\Users\Abdelrahman\AppData\Local\Microsoft\WinGet\Packages\OpenJS.NodeJS.LTS_Microsoft.Winget.Source_8wekyb3d8bbwe\node-v24.16.0-win-x64\node_modules\firebase-tools\lib\bin\firebase.js deploy --only hosting,firestore
+[debug] [2026-06-13T19:28:31.545Z] CLI Version:   15.20.0
+[debug] [2026-06-13T19:28:31.546Z] Platform:      win32
+[debug] [2026-06-13T19:28:31.547Z] Node Version:  v24.16.0
+[debug] [2026-06-13T19:28:31.547Z] Time:          Sat Jun 13 2026 22:28:31 GMT+0300 (Eastern European Summer Time)
+[debug] [2026-06-13T19:28:31.548Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-06-13T19:28:36.761Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-06-13T19:28:36.762Z] > authorizing via signed-in user (mbdo7775@gmail.com)
+[debug] [2026-06-13T19:28:36.762Z] [iam] checking project santafi for permissions ["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2026-06-13T19:28:36.764Z] Checked if tokens are valid: false, expires at: 1781376416923
+[debug] [2026-06-13T19:28:36.764Z] Checked if tokens are valid: false, expires at: 1781376416923
+[debug] [2026-06-13T19:28:36.764Z] > refreshing access token with scopes: []
+[debug] [2026-06-13T19:28:36.767Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-06-13T19:28:36.767Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-06-13T19:28:37.696Z] *** [apiv2] error from fetch(https://www.googleapis.com/oauth2/v3/token, {"headers":{},"method":"POST","body":{"_overheadLength":545,"_valueLength":211,"_valuesToMeasure":[],"writable":false,"readable":true,"dataSize":0,"maxDataSize":2097152,"pauseStreams":true,"_released":true,"_streams":[],"_currentStream":null,"_insideLoop":false,"_pendingNext":false,"_boundary":"--------------------------891b7c35e4b6cbef6c24e7ea","_events":{},"_eventsCount":1}}): FetchError: request to https://www.googleapis.com/oauth2/v3/token failed, reason: unable to verify the first certificate; if the root CA is installed locally, try running Node.js with --use-system-ca
+[error] Authentication Error: Your credentials are no longer valid. Please run firebase login --reauth
+
+For CI servers and headless environments, generate a new token with firebase login:ci
+[debug] [2026-06-13T19:28:37.697Z] [iam] error while checking permissions, command may fail: Authentication Error: Your credentials are no longer valid. Please run firebase login --reauth
+
+For CI servers and headless environments, generate a new token with firebase login:ci
+[debug] [2026-06-13T19:28:37.698Z] Checked if tokens are valid: false, expires at: 1781376416923
+[debug] [2026-06-13T19:28:37.698Z] Checked if tokens are valid: false, expires at: 1781376416923
+[debug] [2026-06-13T19:28:37.698Z] > refreshing access token with scopes: []
+[debug] [2026-06-13T19:28:37.699Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-06-13T19:28:37.699Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-06-13T19:28:37.848Z] *** [apiv2] error from fetch(https://www.googleapis.com/oauth2/v3/token, {"headers":{},"method":"POST","body":{"_overheadLength":545,"_valueLength":211,"_valuesToMeasure":[],"writable":false,"readable":true,"dataSize":0,"maxDataSize":2097152,"pauseStreams":true,"_released":true,"_streams":[],"_currentStream":null,"_insideLoop":false,"_pendingNext":false,"_boundary":"--------------------------5a7ac505294146ddfaed44fc","_events":{},"_eventsCount":1}}): FetchError: request to https://www.googleapis.com/oauth2/v3/token failed, reason: unable to verify the first certificate; if the root CA is installed locally, try running Node.js with --use-system-ca
+[error] Authentication Error: Your credentials are no longer valid. Please run firebase login --reauth
+
+For CI servers and headless environments, generate a new token with firebase login:ci
+[debug] [2026-06-13T19:28:37.849Z] Authentication Error: Your credentials are no longer valid. Please run firebase login --reauth
+
+For CI servers and headless environments, generate a new token with firebase login:ci
+[error] 
+[error] Error: Assertion failed: resolving hosting target of a site with no site name or target name. This should have caused an error earlier
