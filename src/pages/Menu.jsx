@@ -5,7 +5,7 @@
  */
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useClientBranch } from "../context/ClientBranchContext";
+import { BRANCHES, useClientBranch } from "../context/ClientBranchContext";
 import { useCart } from "../context/CartContext";
 import { getBranchMenuData } from "../services/productsService";
 import CategorySection from "../components/CategorySection";
@@ -14,6 +14,7 @@ import { useNavigate } from "react-router-dom";
 const Menu = () => {
   const navigate = useNavigate();
   const { selectedBranch } = useClientBranch();
+  const currentBranch = selectedBranch || BRANCHES[0];
   const { addToCart } = useCart();
 
   const [toast, setToast] = useState({ show: false, message: "", type: "success" });
@@ -24,7 +25,7 @@ const Menu = () => {
   const [activeCategory, setActiveCategory] = useState("all");
 
   useEffect(() => {
-    if (!selectedBranch?.id) {
+    if (!currentBranch?.id) {
       setLoading(false);
       return;
     }
@@ -33,7 +34,7 @@ const Menu = () => {
       setLoading(true);
 
       // Prefer a valid session cache; ignore empty or corrupt payloads.
-      const cacheKey = `menu_${selectedBranch.id}`;
+      const cacheKey = `menu_${currentBranch.id}`;
       const cached = sessionStorage.getItem(cacheKey);
       if (cached) {
         try {
@@ -51,7 +52,7 @@ const Menu = () => {
       }
 
       try {
-        const branchId = selectedBranch.id;
+        const branchId = currentBranch.id;
         const { products: fetchedProducts, categories: fetchedCategories } =
           await getBranchMenuData(branchId);
 
@@ -73,7 +74,7 @@ const Menu = () => {
     };
 
     fetchData();
-  }, [selectedBranch?.id]);
+  }, [currentBranch?.id]);
 
   const handleAddToCart = (item) => {
     addToCart(item);
@@ -106,7 +107,7 @@ const Menu = () => {
     (p) => !p.category || !categories.find((c) => c.slug === p.category)
   );
 
-  if (!selectedBranch) {
+  if (!currentBranch) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-dark-900 to-dark-800">
         <div className="text-center">
@@ -115,7 +116,7 @@ const Menu = () => {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/branches")}
             className="px-8 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold rounded-xl"
           >
             اختار الفرع
@@ -145,7 +146,7 @@ const Menu = () => {
           </h1>
         </div>
         <p className="text-gray-500 text-sm mb-2">
-          🏪 {selectedBranch.name}
+          🏪 {currentBranch.name}
         </p>
         <p className="text-xl text-gray-300 max-w-2xl mx-auto">
           Discover our carefully crafted menu with the finest fast-food offerings

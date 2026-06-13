@@ -2,9 +2,11 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { useClientBranch } from "../context/ClientBranchContext";
 import { containerVariants, itemVariants, floatingVariants } from "../animations/motionVariants";
 import { useBranchProducts } from "../hooks/useBranchProducts";
+import { db } from "../firebase";
 
 const LOGO_URL = "https://res.cloudinary.com/dkgiwnpfi/image/upload/v1774112719/Screenshot_2026-03-21_184621-removebg-preview_zzpxcw.png";
 
@@ -16,11 +18,33 @@ const Home = () => {
   });
   const [newProducts, setNewProducts] = useState([]);
   const [latestProducts, setLatestProducts] = useState([]);
+  const [subscriberEmail, setSubscriberEmail] = useState("");
+  const [subscriberStatus, setSubscriberStatus] = useState({ type: "", message: "" });
 
   useEffect(() => {
     setNewProducts(branchProducts.filter((p) => p.isNew).slice(0, 4));
     setLatestProducts(branchProducts.slice(-4).reverse());
   }, [branchProducts]);
+
+  const handleSubscribe = async (event) => {
+    event.preventDefault();
+    const email = subscriberEmail.trim().toLowerCase();
+    if (!email) return;
+
+    setSubscriberStatus({ type: "loading", message: "جاري الاشتراك..." });
+    try {
+      await addDoc(collection(db, "subscribers"), {
+        email,
+        source: "homepage",
+        createdAt: serverTimestamp(),
+      });
+      setSubscriberEmail("");
+      setSubscriberStatus({ type: "success", message: "تم الاشتراك بنجاح، انتظر عروض سانتافيه الحصرية!" });
+    } catch (error) {
+      console.error("Subscriber signup failed:", error);
+      setSubscriberStatus({ type: "error", message: "حدث خطأ أثناء الاشتراك، حاول مرة أخرى." });
+    }
+  };
 
   return (
     <div className="min-h-screen">
@@ -332,6 +356,48 @@ const Home = () => {
         </div>
       </motion.section>
 
+      <motion.section
+        id="email-offers"
+        aria-labelledby="email-offers-heading"
+        className="py-16 px-4 md:px-8"
+        style={{ background: "linear-gradient(to bottom, #1a0505, #0a0a0a)" }}
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+      >
+        <div className="max-w-2xl mx-auto text-center">
+          <h2 id="email-offers-heading" className="text-3xl md:text-4xl font-black mb-4" style={{ color: "#FFD700" }}>
+            اشترك في عروضنا الحصرية
+          </h2>
+          <form onSubmit={handleSubscribe} className="flex flex-col gap-3 sm:flex-row" dir="rtl">
+            <input
+              type="email"
+              value={subscriberEmail}
+              onChange={(event) => setSubscriberEmail(event.target.value)}
+              required
+              placeholder="اكتب بريدك الإلكتروني"
+              className="min-h-12 flex-1 rounded-lg border border-yellow-400/30 bg-black/40 px-4 text-white outline-none transition placeholder:text-gray-500 focus:border-yellow-300"
+            />
+            <button
+              type="submit"
+              disabled={subscriberStatus.type === "loading"}
+              className="min-h-12 rounded-lg bg-yellow-400 px-8 font-black text-black transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              اشتراك
+            </button>
+          </form>
+          {subscriberStatus.message && (
+            <p
+              className={`mt-4 text-sm font-bold ${
+                subscriberStatus.type === "error" ? "text-red-300" : "text-green-300"
+              }`}
+            >
+              {subscriberStatus.message}
+            </p>
+          )}
+        </div>
+      </motion.section>
+
       {/* ─── Footer with internal links ─── */}
       <footer
         id="footer"
@@ -357,6 +423,7 @@ const Home = () => {
                 <li><Link to="/menu" className="text-gray-500 text-sm hover:text-yellow-400 transition-colors">🍔 قائمة الطعام</Link></li>
                 <li><Link to="/about" className="text-gray-500 text-sm hover:text-yellow-400 transition-colors">ℹ️ من نحن</Link></li>
                 <li><Link to="/contact" className="text-gray-500 text-sm hover:text-yellow-400 transition-colors">📞 تواصل معنا</Link></li>
+                <li><Link to="/privacy-policy" className="text-gray-500 text-sm hover:text-yellow-400 transition-colors">سياسة الخصوصية</Link></li>
               </ul>
             </nav>
 

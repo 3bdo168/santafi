@@ -48,6 +48,15 @@ service cloud.firestore {
       allow read, write: if isSignedIn() && request.auth.uid == userId;
     }
 
+    match /subscribers/{subscriberId} {
+      allow create: if
+        request.resource.data.email is string &&
+        request.resource.data.email.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$') &&
+        request.resource.data.createdAt is timestamp &&
+        request.resource.data.source == "homepage";
+      allow read, update, delete: if isAdminOrOwner();
+    }
+
     // ✅ all_orders
     match /all_orders/{docId} {
       // العميل ينشئ أوردر لنفسه فقط

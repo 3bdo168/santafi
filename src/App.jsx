@@ -18,6 +18,9 @@ import Login from "./pages/Login";
 import Offers from "./pages/Offers";
 import Profile from "./pages/Profile";
 import MyOrders from "./pages/MyOrders";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import NotFound from "./pages/NotFound";
+import CookieConsent from "./components/CookieConsent";
 
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const OwnerDashboard = lazy(() => import("./pages/OwnerDashboard"));
@@ -31,7 +34,7 @@ const RouteFallback = () => (
 
 const RequireBranch = ({ children }) => {
   const { selectedBranch } = useClientBranch();
-  if (!selectedBranch) return <Navigate to="/" replace />;
+  if (!selectedBranch) return <Navigate to="/branches" replace />;
   return children;
 };
 
@@ -44,7 +47,7 @@ function App() {
             <CartProvider>
               <Suspense fallback={<RouteFallback />}>
                 <Routes>
-                  <Route path="/" element={<BranchSelector />} />
+                  <Route path="/branches" element={<BranchSelector />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/admin" element={<AdminLogin />} />
 
@@ -91,19 +94,26 @@ function App() {
                     }
                   />
 
-                  <Route element={<RequireBranch><ClientLayout /></RequireBranch>}>
+                  <Route element={<ClientLayout />}>
+                    <Route path="/" element={<Home />} />
                     <Route path="/home" element={<Home />} />
-                    <Route path="/profile" element={<Profile />} />
-                    <Route path="/my-orders" element={<MyOrders />} />
                     <Route path="/menu" element={<Menu />} />
                     <Route path="/offers" element={<Offers />} />
                     <Route path="/about" element={<About />} />
                     <Route path="/contact" element={<Contact />} />
+                    <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                  </Route>
+
+                  <Route element={<RequireBranch><ClientLayout /></RequireBranch>}>
+                    <Route path="/profile" element={<Profile />} />
+                    <Route path="/my-orders" element={<MyOrders />} />
                     <Route path="/checkout" element={<Checkout />} />
                     <Route path="/product/:id" element={<ProductDetails />} />
                   </Route>
-                  <Route path="*" element={<Navigate to="/" replace />} />
+                  <Route path="/404" element={<NotFound />} />
+                  <Route path="*" element={<NotFound />} />
                 </Routes>
+                <CookieConsent />
               </Suspense>
             </CartProvider>
           </ClientAuthProvider>
