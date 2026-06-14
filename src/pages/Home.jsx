@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { useClientBranch } from "../context/ClientBranchContext";
+import { useLanguage } from "../context/LanguageContext";
 import { containerVariants, itemVariants, floatingVariants } from "../animations/motionVariants";
 import { useBranchProducts } from "../hooks/useBranchProducts";
 import { db } from "../firebase";
@@ -13,6 +14,7 @@ const LOGO_URL = "https://res.cloudinary.com/dkgiwnpfi/image/upload/v1774112719/
 const Home = () => {
   const navigate = useNavigate();
   const { selectedBranch } = useClientBranch();
+  const { t } = useLanguage();
   const { products: branchProducts, loading } = useBranchProducts(selectedBranch?.id, {
     useFallbackBranch: true,
   });
@@ -39,7 +41,7 @@ const Home = () => {
         createdAt: serverTimestamp(),
       });
       setSubscriberEmail("");
-      setSubscriberStatus({ type: "success", message: "تم الاشتراك بنجاح، انتظر عروض سانتافيه الحصرية!" });
+      setSubscriberStatus({ type: "success", message: "تم الاشتراك بنجاح، انتظر عروض سانتافى الحصرية!" });
     } catch (error) {
       console.error("Subscriber signup failed:", error);
       setSubscriberStatus({ type: "error", message: "حدث خطأ أثناء الاشتراك، حاول مرة أخرى." });
@@ -52,7 +54,7 @@ const Home = () => {
       {/* ─── Hero Section ─── */}
       <motion.section
         id="hero"
-        aria-label="قسم الترحيب بسانتافيه"
+        aria-label="قسم الترحيب بسانتافى"
         className="relative min-h-screen flex items-center justify-center overflow-hidden px-4 py-20"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -88,7 +90,7 @@ const Home = () => {
           <motion.div variants={itemVariants} className="flex justify-center mb-8">
             <motion.img
               src={LOGO_URL}
-              alt="شعار مطعم سانتافيه"
+              alt="شعار مطعم سانتافى"
               className="w-40 h-40 object-contain drop-shadow-2xl"
               animate={{ y: [0, -10, 0] }}
               transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
@@ -108,16 +110,16 @@ const Home = () => {
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.8, delay: 0.2 }}
             >
-              سانتافيه
+              {t.hero.title}
             </motion.h1>
             <p className="text-xl md:text-2xl font-semibold" style={{ color: "#FFD700" }}>
-              أفضل فرايد تشيكن وبرجر في المنصورة وميت غمر والزقازيق 🔥
+              {t.hero.subtitle} 🔥
             </p>
           </motion.div>
 
           <motion.div variants={itemVariants} className="mb-12">
             <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
-              استمتع بأشهى الوجبات المقرمشة المحضّرة من أجود المكونات الطازجة، مع توصيل سريع لباب بيتك في أقل من 30 دقيقة.
+              {t.hero.description}
             </p>
           </motion.div>
 
@@ -125,24 +127,24 @@ const Home = () => {
             variants={itemVariants}
             className="flex flex-col sm:flex-row gap-4 justify-center mb-16"
           >
-            <Link to="/menu" aria-label="استعرض قائمة طعام سانتافيه">
+            <Link to="/menu" aria-label="استعرض قائمة طعام سانتافى">
               <motion.button
                 whileHover={{ scale: 1.05, boxShadow: "0 0 40px rgba(255, 215, 0, 0.5)" }}
                 whileTap={{ scale: 0.95 }}
                 className="px-8 py-4 font-bold rounded-xl text-lg text-black"
                 style={{ background: "linear-gradient(135deg, #FFD700, #f0a500)" }}
               >
-                شوف القائمة ←
+                {t.hero.menuBtn} ←
               </motion.button>
             </Link>
-            <Link to="/menu" aria-label="اطلب الآن من سانتافيه">
+            <Link to="/menu" aria-label="اطلب الآن من سانتافى">
               <motion.button
                 whileHover={{ scale: 1.05, backgroundColor: "rgba(139,0,0,0.2)" }}
                 whileTap={{ scale: 0.95 }}
                 className="px-8 py-4 font-bold rounded-xl text-lg transition-all"
                 style={{ border: "2px solid #8B0000", color: "#FFD700" }}
               >
-                اطلب دلوقتي 🛒
+                {t.hero.orderBtn} 🛒
               </motion.button>
             </Link>
           </motion.div>
@@ -183,7 +185,7 @@ const Home = () => {
             className="text-4xl md:text-5xl font-bold text-center mb-4"
             style={{ background: "linear-gradient(135deg, #FFD700, #8B0000)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}
           >
-            ليه سانتافيه؟
+            ليه سانتافى؟
           </h2>
           <p className="text-center text-gray-400 mb-16">جودة ممتازة في كل وجبة</p>
           <motion.div
@@ -273,7 +275,7 @@ const Home = () => {
                 </h2>
                 <p className="text-gray-400">أحدث ما أضفناه على القائمة</p>
               </div>
-              <Link to="/menu" aria-label="استعرض كل منتجات سانتافيه">
+              <Link to="/menu" aria-label="استعرض كل منتجات سانتافى">
                 <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                   className="px-5 py-2 rounded-xl font-semibold text-sm"
                   style={{ border: "1px solid #8B0000", color: "#FFD700" }}>
@@ -293,7 +295,7 @@ const Home = () => {
       {/* ─── Stats ─── */}
       <motion.section
         id="stats"
-        aria-label="إحصائيات سانتافيه"
+        aria-label="إحصائيات سانتافى"
         className="py-20 px-4 md:px-8"
         style={{ background: "linear-gradient(135deg, #1a0505, #0a0a0a, #1a0a00)" }}
         initial={{ opacity: 0 }}
@@ -342,7 +344,7 @@ const Home = () => {
             <p className="text-gray-400 mb-8 text-lg">
               اختار أكلتك المفضلة واستناها ساخنة عند بابك
             </p>
-            <Link to="/menu" aria-label="اطلب من قائمة سانتافيه الآن">
+            <Link to="/menu" aria-label="اطلب من قائمة سانتافى الآن">
               <motion.button
                 whileHover={{ scale: 1.05, boxShadow: "0 0 40px rgba(255,215,0,0.4)" }}
                 whileTap={{ scale: 0.95 }}
@@ -388,9 +390,8 @@ const Home = () => {
           </form>
           {subscriberStatus.message && (
             <p
-              className={`mt-4 text-sm font-bold ${
-                subscriberStatus.type === "error" ? "text-red-300" : "text-green-300"
-              }`}
+              className={`mt-4 text-sm font-bold ${subscriberStatus.type === "error" ? "text-red-300" : "text-green-300"
+                }`}
             >
               {subscriberStatus.message}
             </p>
@@ -403,13 +404,13 @@ const Home = () => {
         id="footer"
         className="py-12 px-4 md:px-8 border-t border-white/5"
         style={{ background: "#080808" }}
-        aria-label="روابط سانتافيه"
+        aria-label="روابط سانتافى"
       >
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
             {/* Brand */}
             <div>
-              <h2 className="text-xl font-black mb-3" style={{ color: "#FFD700" }}>سانتافيه 🔥</h2>
+              <h2 className="text-xl font-black mb-3" style={{ color: "#FFD700" }}>سانتافى 🔥</h2>
               <p className="text-gray-500 text-sm leading-relaxed">
                 أفضل فرايد تشيكن وبرجر في المنصورة وميت غمر والزقازيق. جودة ممتازة وتوصيل سريع.
               </p>
@@ -440,7 +441,7 @@ const Home = () => {
 
           <div className="border-t border-white/5 pt-6 text-center">
             <p className="text-gray-600 text-xs">
-              © {new Date().getFullYear()} سانتافيه. جميع الحقوق محفوظة.
+              © {new Date().getFullYear()} سانتافى. جميع الحقوق محفوظة.
             </p>
           </div>
         </div>
@@ -465,7 +466,7 @@ const ProductCard = ({ product, navigate }) => (
       {product.image && product.image.startsWith("http") ? (
         <img
           src={product.image}
-          alt={`صورة ${product.name} من سانتافيه`}
+          alt={`صورة ${product.name} من سانتافى`}
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
           loading="lazy"
         />

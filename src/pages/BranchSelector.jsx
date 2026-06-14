@@ -1,8 +1,9 @@
 // src/pages/BranchSelector.jsx
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useClientBranch, BRANCHES } from "../context/ClientBranchContext";
+import { useLanguage } from "../context/LanguageContext";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -44,7 +45,9 @@ const ArrowLeftIcon = () => (
 
 export default function BranchSelector() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { setSelectedBranch } = useClientBranch();
+  const { language, t } = useLanguage();
   const [hoveredId, setHoveredId] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
 
@@ -52,12 +55,13 @@ export default function BranchSelector() {
     if (selectedId) return;
     setSelectedId(branch.id);
     setSelectedBranch(branch);
-    setTimeout(() => navigate("/menu"), 350);
+    const from = location.state?.from?.pathname || "/menu";
+    setTimeout(() => navigate(from), 350);
   };
 
   return (
     <div
-      dir="rtl"
+      dir={language === "ar" ? "rtl" : "ltr"}
       className="min-h-screen flex flex-col items-center justify-center px-4 py-12"
       style={{ background: "linear-gradient(135deg, #0f0f0f 0%, #1c1c1c 100%)" }}
     >
@@ -76,8 +80,8 @@ export default function BranchSelector() {
         >
           🍽️
         </motion.div>
-        <h1 className="text-3xl font-black text-white mb-2 tracking-tight">اختار فرعك</h1>
-        <p className="text-gray-500 text-sm">اختار أقرب فرع ليك واستمتع بالمنيو</p>
+        <h1 className="text-3xl font-black text-white mb-2 tracking-tight">{t.branchSelector.title}</h1>
+        <p className="text-gray-500 text-sm">{t.branchSelector.subtitle}</p>
       </motion.div>
 
       <motion.ul
@@ -89,13 +93,14 @@ export default function BranchSelector() {
         {BRANCHES.map((branch) => {
           const isHovered = hoveredId === branch.id;
           const isSelected = selectedId === branch.id;
+          const branchText = t.branches[branch.id] || branch;
           return (
             <motion.li key={branch.id} variants={itemVariants}>
               <motion.button
                 onClick={() => handleSelect(branch)}
                 onHoverStart={() => setHoveredId(branch.id)}
                 onHoverEnd={() => setHoveredId(null)}
-                className="w-full text-right rounded-2xl p-4 border focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+                className={`w-full rounded-2xl p-4 border focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 ${language === "ar" ? "text-right" : "text-left"}`}
                 style={{
                   background: isSelected ? "rgba(249,115,22,0.12)" : isHovered ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.025)",
                   borderColor: isSelected ? "#f97316" : isHovered ? "rgba(249,115,22,0.35)" : "rgba(255,255,255,0.07)",
@@ -107,10 +112,10 @@ export default function BranchSelector() {
               >
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex-1 space-y-1.5">
-                    <p className="text-white font-bold text-base leading-tight">{branch.name}</p>
+                    <p className="text-white font-bold text-base leading-tight">{branchText.name}</p>
                     <div className="flex items-center gap-1.5 text-gray-400 text-xs">
                       <LocationIcon />
-                      <span>{branch.area}</span>
+                      <span>{branchText.area}</span>
                     </div>
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-gray-500 text-xs">
                       <span className="flex items-center gap-1"><ClockIcon />{branch.hours}</span>

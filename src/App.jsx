@@ -1,10 +1,11 @@
 import React, { Suspense, lazy } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { BranchProvider } from "./context/BranchContext";
 import { ClientBranchProvider, useClientBranch } from "./context/ClientBranchContext";
 import { ClientAuthProvider } from "./context/ClientAuthContext";
 import { CartProvider } from "./context/CartContext";
+import { LanguageProvider } from "./context/LanguageContext";
 import ClientLayout from "./layouts/ClientLayout";
 import BranchSelector from "./pages/BranchSelector";
 import Home from "./pages/Home";
@@ -34,7 +35,12 @@ const RouteFallback = () => (
 
 const RequireBranch = ({ children }) => {
   const { selectedBranch } = useClientBranch();
-  if (!selectedBranch) return <Navigate to="/branches" replace />;
+  const location = useLocation();
+
+  if (!selectedBranch) {
+    return <Navigate to="/branches" state={{ from: location }} replace />;
+  }
+
   return children;
 };
 
@@ -42,11 +48,12 @@ function App() {
   return (
     <Router>
       <BranchProvider>
-        <ClientBranchProvider>
-          <ClientAuthProvider>
-            <CartProvider>
-              <Suspense fallback={<RouteFallback />}>
-                <Routes>
+        <LanguageProvider>
+          <ClientBranchProvider>
+            <ClientAuthProvider>
+              <CartProvider>
+                <Suspense fallback={<RouteFallback />}>
+                  <Routes>
                   <Route path="/branches" element={<BranchSelector />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/admin" element={<AdminLogin />} />
@@ -94,7 +101,7 @@ function App() {
                     }
                   />
 
-                  <Route element={<ClientLayout />}>
+                  <Route element={<RequireBranch><ClientLayout /></RequireBranch>}>
                     <Route path="/" element={<Home />} />
                     <Route path="/home" element={<Home />} />
                     <Route path="/menu" element={<Menu />} />
@@ -102,9 +109,6 @@ function App() {
                     <Route path="/about" element={<About />} />
                     <Route path="/contact" element={<Contact />} />
                     <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-                  </Route>
-
-                  <Route element={<RequireBranch><ClientLayout /></RequireBranch>}>
                     <Route path="/profile" element={<Profile />} />
                     <Route path="/my-orders" element={<MyOrders />} />
                     <Route path="/checkout" element={<Checkout />} />
@@ -112,12 +116,13 @@ function App() {
                   </Route>
                   <Route path="/404" element={<NotFound />} />
                   <Route path="*" element={<NotFound />} />
-                </Routes>
-                <CookieConsent />
-              </Suspense>
-            </CartProvider>
-          </ClientAuthProvider>
-        </ClientBranchProvider>
+                  </Routes>
+                  <CookieConsent />
+                </Suspense>
+              </CartProvider>
+            </ClientAuthProvider>
+          </ClientBranchProvider>
+        </LanguageProvider>
       </BranchProvider>
     </Router>
   );

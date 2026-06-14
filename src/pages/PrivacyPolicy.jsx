@@ -4,10 +4,10 @@ import { Link } from "react-router-dom";
 const PrivacyPolicy = () => (
   <main className="min-h-screen bg-gradient-to-b from-dark-900 via-dark-800 to-dark-900 px-4 py-16 text-white" dir="rtl">
     <Helmet>
-      <title>سياسة الخصوصية | سانتافيه</title>
+      <title>سياسة الخصوصية | سانتافى</title>
       <meta
         name="description"
-        content="سياسة خصوصية سانتافيه توضح جمع البيانات، استخدام ملفات تعريف الارتباط، ومعلومات التواصل."
+        content="سياسة خصوصية سانتافى توضح جمع البيانات، استخدام ملفات تعريف الارتباط، ومعلومات التواصل."
       />
       <link rel="canonical" href="https://santafe-fried.netlify.app/privacy-policy" />
     </Helmet>
@@ -18,7 +18,7 @@ const PrivacyPolicy = () => (
       </Link>
       <h1 className="mb-6 text-4xl font-black text-yellow-400 md:text-5xl">سياسة الخصوصية</h1>
       <p className="mb-8 leading-8 text-gray-300">
-        تهتم سانتافيه بحماية خصوصية عملائها في المنصورة وميت غمر والزقازيق. توضح هذه السياسة كيفية جمع واستخدام البيانات عند زيارة الموقع أو إرسال طلب أو الاشتراك في العروض.
+        تهتم سانتافى بحماية خصوصية عملائها في المنصورة وميت غمر والزقازيق. توضح هذه السياسة كيفية جمع واستخدام البيانات عند زيارة الموقع أو إرسال طلب أو الاشتراك في العروض.
       </p>
 
       <div className="space-y-8">

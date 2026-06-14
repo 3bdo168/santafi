@@ -6,7 +6,7 @@ const NotFound = () => (
     <Helmet>
       <meta name="robots" content="noindex, nofollow" />
       <link rel="canonical" href="https://santafe-fried.netlify.app/404" />
-      <title>الصفحة غير موجودة | سانتافيه</title>
+      <title>الصفحة غير موجودة | سانتافى</title>
     </Helmet>
 
     <section className="max-w-lg text-center">

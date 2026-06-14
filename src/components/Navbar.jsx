@@ -1,13 +1,16 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useClientAuth } from "../context/ClientAuthContext";
+import { useLanguage } from "../context/LanguageContext";
 
 const Navbar = ({ totalItems = 0, onCartClick, showOffersTab = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const { clientUser, logout } = useClientAuth();
+  const { language, toggleLanguage, t } = useLanguage();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = async () => {
     await logout();
@@ -40,15 +43,35 @@ const Navbar = ({ totalItems = 0, onCartClick, showOffersTab = false }) => {
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-8">
-          <NavLink to="/home" label="Home" />
-          <NavLink to="/menu" label="Menu" />
-          {showOffersTab && <NavLink to="/offers" label={<>العروض <span style={{ WebkitTextFillColor: 'initial', color: 'initial' }}>🔥</span></>} />}
-          <NavLink to="/about" label="About" />
-          <NavLink to="/contact" label="Contact" />
+          <NavLink to="/home" label={t.nav.home} />
+          <NavLink to="/menu" label={t.nav.menu} />
+          {showOffersTab && <NavLink to="/offers" label={<>{t.nav.offers} <span style={{ WebkitTextFillColor: 'initial', color: 'initial' }}>🔥</span></>} />}
+          <NavLink to="/about" label={t.nav.about} />
+          <NavLink to="/contact" label={t.nav.contact} />
         </div>
 
         {/* Right Side */}
         <div className="flex items-center gap-3">
+          <Link to="/branches" state={{ from: location }} className="hidden sm:inline-flex">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="px-3 py-2 rounded-xl text-xs font-bold text-orange-200 border border-orange-500/30 bg-orange-500/10 hover:bg-orange-500/15"
+            >
+              {t.nav.changeBranch}
+            </motion.button>
+          </Link>
+
+          <motion.button
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.96 }}
+            onClick={toggleLanguage}
+            className="flex items-center overflow-hidden rounded-full border border-orange-500/40 bg-black/30 p-0.5 text-xs font-black"
+            aria-label="Toggle language"
+          >
+            <span className={`px-2.5 py-1 rounded-full transition-all ${language === "ar" ? "bg-orange-500 text-black" : "text-gray-400"}`}>AR</span>
+            <span className={`px-2.5 py-1 rounded-full transition-all ${language === "en" ? "bg-orange-500 text-black" : "text-gray-400"}`}>EN</span>
+          </motion.button>
 
           {/* Cart Icon */}
           <motion.button
@@ -122,7 +145,7 @@ const Navbar = ({ totalItems = 0, onCartClick, showOffersTab = false }) => {
                         className="flex items-center gap-2 px-4 py-3 text-sm text-gray-300 cursor-pointer transition-all"
                       >
                         <span style={{ WebkitTextFillColor: 'initial', color: 'initial' }}>👤</span>
-                        <span>حسابي</span>
+                        <span>{t.nav.profile}</span>
                       </motion.div>
                     </Link>
                     <div className="h-px mx-3" style={{ background: "rgba(255,255,255,0.06)" }} />
@@ -132,7 +155,7 @@ const Navbar = ({ totalItems = 0, onCartClick, showOffersTab = false }) => {
                         className="flex items-center gap-2 px-4 py-3 text-sm text-gray-300 cursor-pointer transition-all"
                       >
                         <span style={{ WebkitTextFillColor: 'initial', color: 'initial' }}>📦</span>
-                        <span>طلباتي</span>
+                        <span>{t.nav.orders}</span>
                       </motion.div>
                     </Link>
                     <div className="h-px mx-3" style={{ background: "rgba(255,255,255,0.06)" }} />
@@ -143,7 +166,7 @@ const Navbar = ({ totalItems = 0, onCartClick, showOffersTab = false }) => {
                       style={{ color: "#ff6b6b" }}
                     >
                       <span style={{ WebkitTextFillColor: 'initial', color: 'initial' }}>🚪</span>
-                      <span>تسجيل خروج</span>
+                      <span>{t.nav.logout}</span>
                     </motion.div>
                   </motion.div>
                 )}
@@ -161,7 +184,7 @@ const Navbar = ({ totalItems = 0, onCartClick, showOffersTab = false }) => {
                   color: "#0a0a0a",
                 }}
               >
-                دخول <span style={{ WebkitTextFillColor: 'initial', color: 'initial' }}>👤</span>
+                {t.nav.login} <span style={{ WebkitTextFillColor: 'initial', color: 'initial' }}>👤</span>
               </motion.button>
             </Link>
           )}
@@ -182,26 +205,34 @@ const Navbar = ({ totalItems = 0, onCartClick, showOffersTab = false }) => {
             exit={{ opacity: 0, y: -20 }}
             className="md:hidden bg-dark-800/80 backdrop-blur-xl border-t border-orange-500/20 p-4"
           >
-            <NavLink to="/home" label="Home" mobile />
-            <NavLink to="/menu" label="Menu" mobile />
-            {showOffersTab && <NavLink to="/offers" label={<>العروض <span style={{ WebkitTextFillColor: 'initial', color: 'initial' }}>🔥</span></>} mobile />}
-            <NavLink to="/about" label="About" mobile />
-            <NavLink to="/contact" label="Contact" mobile />
+            <NavLink to="/home" label={t.nav.home} mobile />
+            <NavLink to="/menu" label={t.nav.menu} mobile />
+            {showOffersTab && <NavLink to="/offers" label={<>{t.nav.offers} <span style={{ WebkitTextFillColor: 'initial', color: 'initial' }}>🔥</span></>} mobile />}
+            <NavLink to="/about" label={t.nav.about} mobile />
+            <NavLink to="/contact" label={t.nav.contact} mobile />
+            <Link to="/branches" state={{ from: location }} onClick={() => setIsOpen(false)}>
+              <motion.div
+                whileTap={{ scale: 0.95 }}
+                className="block py-2 font-semibold text-orange-300"
+              >
+                {t.nav.changeBranch}
+              </motion.div>
+            </Link>
             {clientUser ? (
               <>
-                <NavLink to="/profile" label={<><span style={{ WebkitTextFillColor: 'initial', color: 'initial' }}>👤</span> حسابي</>} mobile />
-                <NavLink to="/my-orders" label={<><span style={{ WebkitTextFillColor: 'initial', color: 'initial' }}>📦</span> طلباتي</>} mobile />
+                <NavLink to="/profile" label={<><span style={{ WebkitTextFillColor: 'initial', color: 'initial' }}>👤</span> {t.nav.profile}</>} mobile />
+                <NavLink to="/my-orders" label={<><span style={{ WebkitTextFillColor: 'initial', color: 'initial' }}>📦</span> {t.nav.orders}</>} mobile />
                 <motion.div
                   onClick={handleLogout}
                   whileTap={{ scale: 0.95 }}
                   className="block py-2 font-semibold cursor-pointer"
                   style={{ color: "#ff6b6b" }}
                 >
-                  <span style={{ WebkitTextFillColor: 'initial', color: 'initial' }}>🚪</span> تسجيل خروج
+                  <span style={{ WebkitTextFillColor: 'initial', color: 'initial' }}>🚪</span> {t.nav.logout}
                 </motion.div>
               </>
             ) : (
-              <NavLink to="/login" label={<><span style={{ WebkitTextFillColor: 'initial', color: 'initial' }}>👤</span> دخول</>} mobile />
+              <NavLink to="/login" label={<><span style={{ WebkitTextFillColor: 'initial', color: 'initial' }}>👤</span> {t.nav.login}</>} mobile />
             )}
           </motion.div>
         )}

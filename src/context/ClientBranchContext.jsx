@@ -30,10 +30,10 @@ const ClientBranchContext = createContext();
 export const ClientBranchProvider = ({ children }) => {
   const [selectedBranch, setSelectedBranchState] = useState(() => {
     try {
-      const saved = sessionStorage.getItem("selectedBranch");
+      const saved = localStorage.getItem("selectedBranch");
       return saved ? JSON.parse(saved) : null;
     } catch {
-      sessionStorage.removeItem("selectedBranch");
+      localStorage.removeItem("selectedBranch");
       return null;
     }
   });
@@ -41,9 +41,9 @@ export const ClientBranchProvider = ({ children }) => {
   const setSelectedBranch = (branch) => {
     setSelectedBranchState(branch);
     if (branch) {
-      sessionStorage.setItem("selectedBranch", JSON.stringify(branch));
+      localStorage.setItem("selectedBranch", JSON.stringify(branch));
     } else {
-      sessionStorage.removeItem("selectedBranch");
+      localStorage.removeItem("selectedBranch");
     }
   };
 
