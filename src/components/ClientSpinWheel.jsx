@@ -28,6 +28,8 @@ const ClientSpinWheel = () => {
   useEffect(() => {
     return onSnapshot(spinConfigRef, (snap) => {
       setConfig(snap.exists() ? normalizeSpinConfig(snap.data()) : normalizeSpinConfig());
+    }, (err) => {
+      console.warn("ClientSpinWheel config error (can be ignored):", err.message);
     });
   }, []);
 
@@ -38,6 +40,8 @@ const ClientSpinWheel = () => {
     }
     return onSnapshot(spinUserRef(clientUser.uid), (snap) => {
       setHasSpun(snap.exists());
+    }, (err) => {
+      console.warn("ClientSpinWheel spinUser error (can be ignored):", err.message);
     });
   }, [clientUser?.uid]);
 

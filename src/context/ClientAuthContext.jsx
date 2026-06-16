@@ -17,9 +17,23 @@ import { auth, db, hasRealFirebaseConfig } from "../firebase";
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: "select_account" });
 
+const getDocWithRetry = async (docRef, retries = 3, delay = 250) => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await getDoc(docRef);
+    } catch (err) {
+      if (err.code === "permission-denied" && i < retries - 1) {
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        continue;
+      }
+      throw err;
+    }
+  }
+};
+
 const ensureClientDoc = async (user) => {
   const docRef = doc(db, "clients", user.uid);
-  const docSnap = await getDoc(docRef);
+  const docSnap = await getDocWithRetry(docRef);
   if (!docSnap.exists()) {
     await setDoc(docRef, {
       name: user.displayName || "",
@@ -62,7 +76,7 @@ export const ClientAuthProvider = ({ children }) => {
             try {
               await ensureClientDoc(user);
               const docRef = doc(db, "clients", user.uid);
-              const docSnap = await getDoc(docRef);
+              const docSnap = await getDocWithRetry(docRef);
               setClientUser({
                 uid: user.uid,
                 email: user.email,
