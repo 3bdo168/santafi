@@ -39,14 +39,16 @@ const CouponsTab = ({ couponForm, setCouponForm, coupons, onAdd, onDelete }) => 
           >
             <option value="percent">نسبة %</option>
             <option value="fixed">مبلغ ثابت</option>
+            <option value="free_delivery">توصيل مجاني</option>
           </select>
           {/* قيمة الخصم */}
           <input
             type="number"
             value={couponForm.value}
+            disabled={couponForm.type === "free_delivery"}
             onChange={(e) => setCouponForm({ ...couponForm, value: e.target.value })}
-            placeholder="قيمة الخصم"
-            className="px-4 py-3 bg-dark-800/50 border border-orange-500/30 rounded-lg text-white"
+            placeholder={couponForm.type === "free_delivery" ? "توصيل مجاني" : "قيمة الخصم"}
+            className="px-4 py-3 bg-dark-800/50 border border-orange-500/30 rounded-lg text-white disabled:opacity-50"
           />
           {/* حد أدنى */}
           <input
@@ -119,8 +121,15 @@ const CouponsTab = ({ couponForm, setCouponForm, coupons, onAdd, onDelete }) => 
             <div key={coupon.id} className="glass p-4 rounded-xl border border-orange-500/20">
               <p className="font-black text-yellow-400 text-lg">{coupon.code}</p>
               <p className="text-sm text-gray-300 mt-1">
-                {coupon.type === "percent" ? `خصم ${coupon.value}%` : `خصم ${coupon.value} ج`}
+                {coupon.type === "free_delivery"
+                  ? "توصيل مجاني"
+                  : coupon.type === "percent"
+                    ? `خصم ${coupon.value}%`
+                    : `خصم ${coupon.value} ج`}
               </p>
+              {coupon.source === "spinWheel" && (
+                <p className="text-xs text-yellow-400 mt-1">كوبون عجلة الحظ</p>
+              )}
               <p className="text-xs text-gray-500 mt-1">حد أدنى: {Number(coupon.minOrder || 0).toFixed(2)} ج</p>
 
               {/* التواريخ */}

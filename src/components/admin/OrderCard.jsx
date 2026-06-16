@@ -7,6 +7,7 @@ const OrderCard = ({
   handleArchiveOrder,
   handleArchiveStatusUpdate,
   handleDeleteOrder,
+  handlePrintOrder,
 }) => (
   <motion.div
     key={order.id}
@@ -100,6 +101,25 @@ const OrderCard = ({
     )}
 
     {/* ── Orders Actions (pending / preparing / out_for_delivery) ── */}
+    {showActions === true && (
+      <div className="flex gap-2 flex-wrap mb-2">
+        <select
+          defaultValue=""
+          onChange={(e) => {
+            if (!e.target.value) return;
+            handlePrintOrder(order, e.target.value);
+            e.target.value = "";
+          }}
+          className="py-2 px-3 bg-dark-800/70 border border-orange-500/30 text-orange-300 rounded-lg text-sm font-semibold"
+        >
+          <option value="" disabled>🖨️ طباعة</option>
+          <option value="a4">طباعة A4</option>
+          <option value="thermal">طباعة حرارية</option>
+          <option value="pdf">تحميل PDF</option>
+        </select>
+      </div>
+    )}
+
     {showActions === true &&
       order.status !== "delivered" &&
       order.status !== "done" &&

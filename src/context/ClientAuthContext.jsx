@@ -1,25 +1,40 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
+import { ClientAuthContext } from "./authContext";
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signInWithPopup,
+  getRedirectResult,
   GoogleAuthProvider,
+  signInWithRedirect,
+  signInWithPopup,
   signOut,
   updateProfile,
 } from "firebase/auth";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db, hasRealFirebaseConfig } from "../firebase";
 
-const ClientAuthContext = createContext();
-
-export const useClientAuth = () => useContext(ClientAuthContext);
-
 const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: "select_account" });
+
+const ensureClientDoc = async (user) => {
+  const docRef = doc(db, "clients", user.uid);
+  const docSnap = await getDoc(docRef);
+  if (!docSnap.exists()) {
+    await setDoc(docRef, {
+      name: user.displayName || "",
+      email: user.email || "",
+      phone: "",
+      address: "",
+      createdAt: serverTimestamp(),
+    });
+  }
+};
 
 export const ClientAuthProvider = ({ children }) => {
   const [clientUser, setClientUser] = useState(null);
   const [clientLoading, setClientLoading] = useState(true);
+  const [clientAuthError, setClientAuthError] = useState(null);
 
   useEffect(() => {
     if (!hasRealFirebaseConfig) {
@@ -27,34 +42,59 @@ export const ClientAuthProvider = ({ children }) => {
       return;
     }
 
-    const unsub = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        try {
-          const docRef = doc(db, "clients", user.uid);
-          const docSnap = await getDoc(docRef);
-          setClientUser({
-            uid: user.uid,
-            email: user.email,
-            displayName: user.displayName,
-            photoURL: user.photoURL,
-            ...(docSnap.exists() ? docSnap.data() : {}),
-          });
-        } catch (err) {
-          console.error("ClientAuth Firestore error:", err);
-          // ✅ fallback — نستخدم بيانات الـ Auth بس من غير Firestore
-          setClientUser({
-            uid: user.uid,
-            email: user.email,
-            displayName: user.displayName,
-            photoURL: user.photoURL,
-          });
+    let unsub = () => {};
+    let active = true;
+
+    const initAuth = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result?.user) {
+          setClientAuthError(null);
+          await ensureClientDoc(result.user);
         }
-      } else {
-        setClientUser(null);
+      } catch (err) {
+        console.error("Google redirect login error:", err?.code, err?.message, err);
+        setClientAuthError({ code: err?.code || "unknown", message: err?.message || "" });
+      } finally {
+        if (!active) return;
+
+        unsub = onAuthStateChanged(auth, async (user) => {
+          if (user) {
+            try {
+              await ensureClientDoc(user);
+              const docRef = doc(db, "clients", user.uid);
+              const docSnap = await getDoc(docRef);
+              setClientUser({
+                uid: user.uid,
+                email: user.email,
+                displayName: user.displayName,
+                photoURL: user.photoURL,
+                ...(docSnap.exists() ? docSnap.data() : {}),
+              });
+            } catch (err) {
+              console.error("ClientAuth Firestore error:", err);
+              // ✅ fallback — نستخدم بيانات الـ Auth بس من غير Firestore
+              setClientUser({
+                uid: user.uid,
+                email: user.email,
+                displayName: user.displayName,
+                photoURL: user.photoURL,
+              });
+            }
+          } else {
+            setClientUser(null);
+          }
+          setClientLoading(false);
+        });
       }
-      setClientLoading(false);
-    });
-    return () => unsub();
+    };
+
+    initAuth();
+
+    return () => {
+      active = false;
+      unsub();
+    };
   }, []);
 
   const registerWithEmail = async (name, email, password) => {
@@ -74,23 +114,16 @@ export const ClientAuthProvider = ({ children }) => {
     signInWithEmailAndPassword(auth, email, password);
 
   const loginWithGoogle = async () => {
-    const result = await signInWithPopup(auth, googleProvider);
     try {
-      const docRef = doc(db, "clients", result.user.uid);
-      const docSnap = await getDoc(docRef);
-      if (!docSnap.exists()) {
-        await setDoc(docRef, {
-          name: result.user.displayName,
-          email: result.user.email,
-          phone: "",
-          address: "",
-          createdAt: serverTimestamp(),
-        });
-      }
+      setClientAuthError(null);
+      setClientLoading(true);
+      await signInWithRedirect(auth, googleProvider);
+      return { redirecting: true };
     } catch (err) {
-      console.error("Google login Firestore error:", err);
+      setClientLoading(false);
+      setClientAuthError({ code: err?.code || "unknown", message: err?.message || "" });
+      throw err;
     }
-    return result;
   };
 
   const logout = () => signOut(auth);
@@ -100,6 +133,7 @@ export const ClientAuthProvider = ({ children }) => {
       value={{
         clientUser,
         clientLoading,
+        clientAuthError,
         registerWithEmail,
         loginWithEmail,
         loginWithGoogle,

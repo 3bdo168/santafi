@@ -38,6 +38,6 @@ try {
 }
 const auth = getAuth(app);
 const db = getFirestore(app);
-const functions = getFunctions(app);
+const functions = getFunctions(app, "europe-west1");
 
 export { app, analytics, auth, db, functions, hasRealFirebaseConfig };

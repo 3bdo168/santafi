@@ -27,7 +27,6 @@ service cloud.firestore {
     }
 
     function isValidClientOrderCreate(branchId) {
-      // Basic schema validation for client-created orders to reduce tampering.
       return
         request.resource.data.clientUid == request.auth.uid &&
         request.resource.data.branchId == branchId &&
@@ -38,6 +37,19 @@ service cloud.firestore {
         request.resource.data.items is list &&
         request.resource.data.createdAt is timestamp;
     }
+
+    function isCouponUsageIncrement() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(["usageCount", "updatedAt"]) &&
+        request.resource.data.usageCount == resource.data.usageCount + 1 &&
+        request.resource.data.updatedAt is timestamp &&
+        (!resource.data.keys().hasAny(["usageLimit"]) ||
+          resource.data.usageLimit == null ||
+          resource.data.usageCount < resource.data.usageLimit) &&
+        (!resource.data.keys().hasAny(["ownerUid"]) ||
+          resource.data.ownerUid == request.auth.uid);
+    }
+
+    // ── Static collections ──────────────────────────────────────────
 
     match /admins/{userId} {
       allow read: if isSignedIn() && request.auth.uid == userId;
@@ -57,16 +69,12 @@ service cloud.firestore {
       allow read, update, delete: if isAdminOrOwner();
     }
 
-    // ✅ all_orders
     match /all_orders/{docId} {
-      // العميل ينشئ أوردر لنفسه فقط
       allow create: if isSignedIn() && isValidClientOrderCreate(request.resource.data.branchId);
-
       allow read: if isSignedIn() && (
         resource.data.clientUid == request.auth.uid ||
         isAdminOrOwner()
       );
-
       allow update: if isAdminOrOwner();
     }
 
@@ -74,77 +82,113 @@ service cloud.firestore {
       allow read, write: if isOwner();
     }
 
-    // ✅ ownerTargets — التارجتات (للـ owner فقط)
     match /ownerTargets/{doc}/data/{docId} {
       allow read, write: if isOwner();
     }
 
-    // ✅ modifierGroups (global) — قراءة للكل، كتابة للأدمن/أونر
     match /modifierGroups/{groupId} {
       allow read: if true;
       allow write: if isAdminOrOwner();
-
       match /options/{optionId} {
         allow read: if true;
         allow write: if isAdminOrOwner();
       }
     }
 
-    // ✅ offers (global) — قراءة للكل، كتابة للأونر/أدمن
     match /offers/{offerId} {
       allow read: if true;
       allow write: if isAdminOrOwner();
     }
 
-    // ✅ offerItems (global) — قراءة للكل، كتابة للأدمن/أونر
     match /offerItems/{itemId} {
       allow read: if true;
       allow write: if isAdminOrOwner();
     }
 
-    // ✅ configs (global) — قراءة للكل، كتابة للأدمن/أونر
     match /configs/{docId} {
       allow read: if true;
       allow write: if isAdminOrOwner();
     }
 
+    // ✅ عجلة الحظ — كانت ناقصة من الـ rules القديمة
+    match /spinConfig/{docId} {
+      allow read: if true;
+      allow write: if isAdminOrOwner();
+    }
+
+    match /spinLogs/{dateId} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn();
+      allow delete: if isAdminOrOwner();
+    }
+
+    match /spinUsers/{userId} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdminOrOwner());
+      allow create: if isSignedIn() &&
+        request.auth.uid == userId &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.prizeId is string &&
+        request.resource.data.prizeLabel is string &&
+        request.resource.data.time is timestamp;
+      allow update: if false;
+      allow delete: if isAdminOrOwner();
+    }
+
+    // ── Branch-level collections (direct access) ────────────────────
+
+    match /{branchId}/deliveryZones/{doc=**} {
+      allow read: if true;
+      allow write: if isOwner() || isAdminForBranch(branchId);
+    }
+
+    // ✅ تغيير: العميل يقرأ الكوبونات في الـ checkout
+    match /{branchId}/discountCoupons/{doc=**} {
+      allow read: if true;
+      allow create, delete: if isOwner() || isAdminForBranch(branchId);
+      allow update: if isOwner() || isAdminForBranch(branchId) ||
+        (isSignedIn() && isCouponUsageIncrement());
+    }
+
+    match /{branchId}/deliveryConfig/{doc=**} {
+      allow read: if true;
+      allow write: if isOwner() || isAdminForBranch(branchId);
+    }
+
+    // ── Branch-level /data/ sub-collections ─────────────────────────
+
     match /{branchId}/{section}/data/{docId} {
 
-      // ── products & categories — القراءة للكل، الكتابة للأدمن/أونر ──
       allow read: if section == "products" || section == "categories";
       allow write: if (section == "products" || section == "categories") &&
         (isOwner() || isAdminForBranch(branchId));
 
-      // ── orders — إنشاء للعملاء، قراءة/تعديل/حذف للأدمن/أونر ──
       allow create: if section == "orders" && isSignedIn() && isValidClientOrderCreate(branchId);
       allow read, update, delete: if section == "orders" && (isOwner() || isAdminForBranch(branchId));
 
-      // ── archived_orders — قراءة/كتابة للأدمن/أونر ──
       allow read, write: if section == "archived_orders" && (isOwner() || isAdminForBranch(branchId));
 
-      // ✅ discountCoupons — قراءة/كتابة للأدمن/أونر (كانت ناقصة!)
-      allow read, write: if section == "discountCoupons" && (isOwner() || isAdminForBranch(branchId));
+      // ✅ تغيير: قراءة الكوبونات للعملاء + تحديث usageCount فقط بعد الطلب
+      allow read: if section == "discountCoupons";
+      allow create, delete: if section == "discountCoupons" && (isOwner() || isAdminForBranch(branchId));
+      allow update: if section == "discountCoupons" && (
+        (isOwner() || isAdminForBranch(branchId)) ||
+        (isSignedIn() && isCouponUsageIncrement())
+      );
 
-      // ✅ deliveryZones — قراءة/كتابة للأدمن/أونر (كانت ناقصة!)
       allow read, write: if section == "deliveryZones" && (isOwner() || isAdminForBranch(branchId));
 
-      // ✅ recommendations — القراءة للكل (عشان الـ popup في الـ checkout)، الكتابة للأدمن/أونر
       allow read: if section == "recommendations";
       allow write: if section == "recommendations" && (isOwner() || isAdminForBranch(branchId));
 
-      // ✅ offers (branch scoped) — قراءة للكل، كتابة للأدمن/أونر
       allow read: if section == "offers";
       allow write: if section == "offers" && (isOwner() || isAdminForBranch(branchId));
 
-      // ✅ offerItems (branch scoped) — قراءة للكل، كتابة للأدمن/أونر
       allow read: if section == "offerItems";
       allow write: if section == "offerItems" && (isOwner() || isAdminForBranch(branchId));
 
-      // ✅ offersPageConfig (branch scoped) — قراءة للكل، كتابة للأدمن/أونر
       allow read: if section == "offersPageConfig";
       allow write: if section == "offersPageConfig" && (isOwner() || isAdminForBranch(branchId));
 
-      // ✅ deliveryConfig (branch scoped) — قراءة للكل، كتابة للأدمن/أونر
       allow read: if section == "deliveryConfig";
       allow write: if section == "deliveryConfig" && (isOwner() || isAdminForBranch(branchId));
     }

@@ -4,8 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { signOut, onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "../firebase";
 import {
-  collection, addDoc, getDocs, deleteDoc, doc, updateDoc,
-  onSnapshot, query, orderBy, writeBatch, serverTimestamp, setDoc,
+  collection, addDoc, getDocs, getDoc, deleteDoc, doc, updateDoc,
+  onSnapshot, query, orderBy, writeBatch, serverTimestamp, setDoc, deleteField,
 } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import { useBranch } from "../context/BranchContext";
@@ -19,6 +19,8 @@ import DeliveryZonesTab from "../components/admin/DeliveryZonesTab";
 import RecommendationsTab from "../components/admin/RecommendationsTab";
 import ModifiersTab from "../components/admin/ModifiersTab";
 import OffersTab from "../components/admin/OffersTab";
+import OrderPrintView from "../components/OrderPrintView";
+import SpinSettingsTab from "../components/admin/SpinSettingsTab";
 import { validateProductDiscount } from "../utils/pricing";
 
 const CLOUDINARY_CLOUD = "dkgiwnpfi";
@@ -32,6 +34,17 @@ const EMOJI_LIST = [
   "🥂","🥃","🧊","🍽️","🍴","🥄","🍉","🍓","🔥","⭐",
 ];
 const BRANCH_NAMES = { mansoura: "المنصورة", mit_ghamr: "ميت غمر", zagazig: "الزقازيق" };
+
+const normalizeDeliveryZones = (data = {}) => {
+  const rawZones = data.zones || data.data || data;
+  const entries = Array.isArray(rawZones)
+    ? rawZones.map((zone, index) => [zone.id || String(index), zone])
+    : Object.entries(rawZones);
+
+  return entries
+    .filter(([, zone]) => zone && typeof zone === "object" && ("name" in zone || "fee" in zone))
+    .map(([id, zone]) => ({ id, ...zone }));
+};
 
 const playNotificationSound = () => {
   try {
@@ -73,7 +86,7 @@ const DashboardContent = ({ branchId }) => {
   const categoriesRef= useMemo(() => collection(db, branchId, "categories", "data"), [branchId]);
   const archiveRef   = useMemo(() => collection(db, branchId, "archived_orders", "data"), [branchId]);
   const couponsRef   = useMemo(() => collection(db, branchId, "discountCoupons", "data"), [branchId]);
-  const zonesRef     = useMemo(() => collection(db, branchId, "deliveryZones", "data"), [branchId]);
+  const zonesDocRef  = useMemo(() => doc(db, branchId, "deliveryZones"), [branchId]);
   const recsRef      = useMemo(() => collection(db, branchId, "recommendations", "data"), [branchId]);
 
   const navigate = useNavigate();
@@ -91,6 +104,7 @@ const DashboardContent = ({ branchId }) => {
   const [notification, setNotification]     = useState(null);
   const [cropperSrc, setCropperSrc]         = useState(null);
   const [showCropper, setShowCropper]       = useState(false);
+  const [printOrder, setPrintOrder]         = useState(null);
 
   const prevOrdersCount = useRef(null);
   const isFirstLoad     = useRef(true);
@@ -116,7 +130,7 @@ const DashboardContent = ({ branchId }) => {
   const fetchProducts       = useCallback(async () => { try { const snap = await getDocs(productsRef);   setProducts(snap.docs.map((d) => ({ id: d.id, ...d.data() }))); } catch (err) { console.error("❌ fetchProducts:", err.message); } }, [productsRef]);
   const fetchCategories     = useCallback(async () => { try { const snap = await getDocs(categoriesRef); setCategories(snap.docs.map((d) => ({ id: d.id, ...d.data() }))); } catch (err) { console.error("❌ fetchCategories:", err.message); } }, [categoriesRef]);
   const fetchCoupons        = useCallback(async () => { try { const snap = await getDocs(couponsRef);    setCoupons(snap.docs.map((d) => ({ id: d.id, ...d.data() }))); } catch (err) { console.error("❌ fetchCoupons:", err.message); } }, [couponsRef]);
-  const fetchZones          = useCallback(async () => { try { const snap = await getDocs(zonesRef);      setZones(snap.docs.map((d) => ({ id: d.id, ...d.data() }))); } catch (err) { console.error("❌ fetchZones:", err.message); } }, [zonesRef]);
+  const fetchZones          = useCallback(async () => { try { const snap = await getDoc(zonesDocRef);    setZones(normalizeDeliveryZones(snap.exists() ? snap.data() : {})); } catch (err) { console.error("❌ fetchZones:", err.message); } }, [zonesDocRef]);
   const fetchRecommendations= useCallback(async () => { try { const snap = await getDocs(recsRef);       setRecommendations(snap.docs.map((d) => ({ id: d.id, ...d.data() }))); } catch (err) { console.error("❌ fetchRecommendations:", err.message); } }, [recsRef]);
 
   useEffect(() => {
@@ -250,8 +264,8 @@ const DashboardContent = ({ branchId }) => {
   };
 
   const handleAddCoupon = async () => {
-    if (!couponForm.code || !couponForm.value) return alert("الكود والقيمة مطلوبين");
-    const payload = { code: couponForm.code.trim().toUpperCase(), type: couponForm.type, value: Number(couponForm.value) || 0, minOrder: Number(couponForm.minOrder) || 0, active: couponForm.active, startDate: couponForm.startDate || null, endDate: couponForm.endDate || null, usageLimit: couponForm.usageLimit ? Number(couponForm.usageLimit) : null, usageCount: 0, updatedAt: serverTimestamp() };
+    if (!couponForm.code || (couponForm.type !== "free_delivery" && !couponForm.value)) return alert("الكود والقيمة مطلوبين");
+    const payload = { code: couponForm.code.trim().toUpperCase(), type: couponForm.type, value: couponForm.type === "free_delivery" ? 0 : Number(couponForm.value) || 0, minOrder: Number(couponForm.minOrder) || 0, active: couponForm.active, startDate: couponForm.startDate || null, endDate: couponForm.endDate || null, usageLimit: couponForm.usageLimit ? Number(couponForm.usageLimit) : null, usageCount: 0, updatedAt: serverTimestamp() };
     await setDoc(doc(db, branchId, "discountCoupons", "data", payload.code), payload, { merge: true });
     setCouponForm({ code: "", type: "percent", value: "", minOrder: "", active: true, startDate: "", endDate: "", usageLimit: "" });
     fetchCoupons();
@@ -264,14 +278,22 @@ const DashboardContent = ({ branchId }) => {
   };
   const handleAddZone = async () => {
     if (!zoneForm.name || zoneForm.fee === "") return alert("اسم المنطقة والسعر مطلوبين");
-    await addDoc(zonesRef, { name: zoneForm.name, fee: Number(zoneForm.fee) || 0, active: zoneForm.active, updatedAt: serverTimestamp() });
+    const zoneId = doc(collection(db, "_ids")).id;
+    await setDoc(zonesDocRef, {
+      [zoneId]: {
+        name: zoneForm.name,
+        fee: Number(zoneForm.fee) || 0,
+        active: zoneForm.active,
+        updatedAt: serverTimestamp(),
+      },
+    }, { merge: true });
     setZoneForm({ name: "", fee: "", active: true });
     fetchZones();
   };
   const handleDeleteZone = async (zoneId) => {
     if (!window.confirm("حذف منطقة التوصيل؟")) return;
     if (!confirmSensitiveAction("حذف منطقة توصيل")) return;
-    await deleteDoc(doc(db, branchId, "deliveryZones", "data", zoneId));
+    await updateDoc(zonesDocRef, { [zoneId]: deleteField() });
     fetchZones();
   };
 
@@ -329,6 +351,11 @@ const DashboardContent = ({ branchId }) => {
 
   const handleLogout = async () => { await signOut(auth); navigate("/admin"); };
 
+  const handlePrintOrder = (order, mode) => {
+    setPrintOrder({ order, mode: mode === "thermal" ? "thermal" : "a4" });
+    requestAnimationFrame(() => requestAnimationFrame(() => window.print()));
+  };
+
   const pendingCount   = orders.filter((o) => o.status === "pending").length;
   const preparingCount = orders.filter((o) => o.status === "preparing").length;
 
@@ -383,7 +410,7 @@ const DashboardContent = ({ branchId }) => {
 
       {/* Tabs */}
       <div className="flex gap-3 px-6 pt-6 overflow-x-auto">
-        {["products","categories","modifiers","offers","recommendations","coupons","delivery","orders","archive"].map((tab) => (
+        {["products","categories","modifiers","offers","recommendations","coupons","delivery","spin","orders","archive"].map((tab) => (
           <motion.button key={tab} whileTap={{ scale: 0.95 }} onClick={() => setActiveTab(tab)}
             className={`px-6 py-3 rounded-xl font-bold capitalize transition-all whitespace-nowrap ${activeTab === tab ? "bg-gradient-to-r from-orange-500 to-red-500 text-white" : "glass border border-orange-500/20 text-gray-300 hover:border-orange-500/50"}`}
           >
@@ -394,6 +421,7 @@ const DashboardContent = ({ branchId }) => {
               : tab === "coupons" ? "🎟️ الكوبونات"
               : tab === "recommendations" ? "🌟 الترشيحات"
               : tab === "delivery" ? "🚚 التوصيل"
+              : tab === "spin" ? "🎁 عجلة الحظ"
               : tab === "archive" ? (
                 <span className="flex items-center gap-2">📁 الأرشيف{archivedOrders.length > 0 && <span className="bg-gray-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">{archivedOrders.length}</span>}</span>
               ) : (
@@ -422,6 +450,9 @@ const DashboardContent = ({ branchId }) => {
         {activeTab === "delivery" && (
           <DeliveryZonesTab zoneForm={zoneForm} setZoneForm={setZoneForm} zones={zones} onAdd={handleAddZone} onDelete={handleDeleteZone} />
         )}
+        {activeTab === "spin" && (
+          <SpinSettingsTab />
+        )}
         {activeTab === "orders" && (
           <OrdersTab
             orders={orders}
@@ -429,6 +460,7 @@ const DashboardContent = ({ branchId }) => {
             handleArchiveOrder={handleArchiveOrder}
             handleDeleteOrder={handleDeleteOrder}
             handleDeleteAllDone={handleDeleteAllDone}
+            handlePrintOrder={handlePrintOrder}
           />
         )}
         {activeTab === "recommendations" && (
@@ -459,6 +491,7 @@ const DashboardContent = ({ branchId }) => {
         }}
         onSave={handleCroppedUpload}
       />
+      <OrderPrintView order={printOrder?.order} mode={printOrder?.mode} />
     </div>
   );
 };

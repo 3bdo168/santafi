@@ -72,11 +72,14 @@ export const calculateFinalTotals = ({ cart = [], coupon = null, deliveryFee = 0
   const subtotal = calculateCartSubtotal(cart);
   const couponResult = applyCouponDiscount(subtotal, coupon);
   const shipping = Number(deliveryFee) || 0;
-  const total = Math.max(0, couponResult.finalSubtotal + shipping);
+  const couponFreeDelivery = coupon?.active !== false && coupon?.type === "free_delivery";
+  const finalDeliveryFee = couponFreeDelivery ? 0 : shipping;
+  const total = Math.max(0, couponResult.finalSubtotal + finalDeliveryFee);
   return {
     subtotal,
     couponDiscount: couponResult.amount || 0,
-    deliveryFee: shipping,
+    deliveryFee: finalDeliveryFee,
+    deliveryDiscount: shipping - finalDeliveryFee,
     total,
   };
 };

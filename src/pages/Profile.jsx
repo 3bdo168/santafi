@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { doc, updateDoc, collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase";
-import { useClientAuth } from "../context/ClientAuthContext";
+import { useClientAuth } from "../context/authContext";
 
 const statusColors = {
   pending:            { bg: "rgba(255,193,7,0.15)",  border: "rgba(255,193,7,0.4)",  text: "#FFC107", label: "⏳ قيد الانتظار" },

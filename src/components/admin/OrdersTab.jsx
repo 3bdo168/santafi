@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import OrderCard from "./OrderCard";
 
-const OrdersTab = ({ orders, handleUpdateStatus, handleArchiveOrder, handleDeleteOrder, handleDeleteAllDone }) => {
+const OrdersTab = ({ orders, handleUpdateStatus, handleArchiveOrder, handleDeleteOrder, handleDeleteAllDone, handlePrintOrder }) => {
   const doneCount = orders.filter((o) =>
     o.status === "delivered" || o.status === "done" || o.status === "cancelled" || o.status === "rejected"
   ).length;
@@ -33,6 +33,7 @@ const OrdersTab = ({ orders, handleUpdateStatus, handleArchiveOrder, handleDelet
           handleUpdateStatus={handleUpdateStatus}
           handleArchiveOrder={handleArchiveOrder}
           handleDeleteOrder={handleDeleteOrder}
+          handlePrintOrder={handlePrintOrder}
         />
       ))}
     </div>

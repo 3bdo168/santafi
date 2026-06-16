@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase";
-import { useClientAuth } from "../context/ClientAuthContext";
+import { useClientAuth } from "../context/authContext";
 
 /* ─────────────────────────────────────────
    Status Configuration

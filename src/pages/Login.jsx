@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, Link } from "react-router-dom";
-import { useClientAuth } from "../context/ClientAuthContext";
+import { useClientAuth } from "../context/authContext";
 import { hasRealFirebaseConfig } from "../firebase";
 
 const LOGO_URL =
@@ -9,7 +9,7 @@ const LOGO_URL =
 
 const Login = () => {
   const navigate = useNavigate();
-  const { loginWithEmail, loginWithGoogle, registerWithEmail, clientUser, clientLoading } = useClientAuth();
+  const { loginWithEmail, loginWithGoogle, registerWithEmail, clientUser, clientLoading, clientAuthError } = useClientAuth();
 
   const [mode, setMode] = useState("login"); // "login" | "register"
   const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "" });
@@ -21,6 +21,14 @@ const Login = () => {
       navigate("/home", { replace: true });
     }
   }, [clientLoading, clientUser, navigate]);
+
+  useEffect(() => {
+    if (clientAuthError?.code) {
+      const message = getErrorMessage(clientAuthError.code) || clientAuthError.message || "حصل خطأ";
+      setError(`${message} (${clientAuthError.code})`);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientAuthError?.code]);
 
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -58,17 +66,22 @@ const Login = () => {
     }
     setLoading(true);
     try {
-      await loginWithGoogle();
-      navigate("/home");
+      const result = await loginWithGoogle();
+      if (!result?.redirecting) {
+        navigate("/home");
+      }
     } catch (err) {
-      console.error("Google login error:", err.code, err.message);
-      setError(getErrorMessage(err.code));
+      console.error("Google login error:", err?.code, err?.message, err);
+      const code = err?.code || "unknown";
+      const message = getErrorMessage(code) || err?.message || "حصل خطأ غير متوقع، حاول تاني";
+      setError(`${message} (${code})`);
     } finally {
       setLoading(false);
     }
   };
 
   const getErrorMessage = (code) => {
+    if (!code) return "";
     switch (code) {
       case "auth/user-not-found": return "الإيميل ده مش موجود";
       case "auth/wrong-password": return "الباسورد غلط";
@@ -79,6 +92,7 @@ const Login = () => {
       case "auth/network-request-failed": return "مشكلة في الإنترنت، تأكد من الاتصال";
       case "auth/popup-closed-by-user": return "قفلت نافذة Google قبل ما تكمّل";
       case "auth/popup-blocked": return "المتصفح بلوك البوب أب، فعّلها وجرب تاني";
+      case "auth/popup-timeout": return "تسجيل Google اتأخر/اتعلق. هنحوّلك لتسجيل الدخول بالـ Redirect تلقائيًا.";
       case "auth/unauthorized-domain": return "الدومين ده مش مضاف في Firebase Console. ضيف الدومين في Authentication → Settings → Authorized Domains";
       case "auth/cancelled-popup-request": return "تم إلغاء طلب تسجيل الدخول، جرب تاني";
       case "auth/internal-error": return "خطأ داخلي في Firebase، تأكد من إعدادات المشروع";

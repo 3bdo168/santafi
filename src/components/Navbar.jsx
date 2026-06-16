@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useClientAuth } from "../context/ClientAuthContext";
+import { useClientAuth } from "../context/authContext";
 import { useLanguage } from "../context/LanguageContext";
 
 const Navbar = ({ totalItems = 0, onCartClick, showOffersTab = false }) => {
@@ -66,7 +66,7 @@ const Navbar = ({ totalItems = 0, onCartClick, showOffersTab = false }) => {
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.96 }}
             onClick={toggleLanguage}
-            className="flex items-center overflow-hidden rounded-full border border-orange-500/40 bg-black/30 p-0.5 text-xs font-black"
+            className="hidden md:flex items-center overflow-hidden rounded-full border border-orange-500/40 bg-black/30 p-0.5 text-xs font-black"
             aria-label="Toggle language"
           >
             <span className={`px-2.5 py-1 rounded-full transition-all ${language === "ar" ? "bg-orange-500 text-black" : "text-gray-400"}`}>AR</span>
@@ -93,101 +93,103 @@ const Navbar = ({ totalItems = 0, onCartClick, showOffersTab = false }) => {
           </motion.button>
 
           {/* Auth Section */}
-          {clientUser ? (
-            // ✅ لو logged in — Avatar + Dropdown
-            <div className="relative">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all"
-                style={{ border: "1px solid rgba(255,215,0,0.25)", background: "rgba(255,215,0,0.07)" }}
-              >
-                {/* Avatar */}
-                {clientUser.photoURL ? (
-                  <img
-                    src={clientUser.photoURL}
-                    alt="avatar"
-                    className="w-7 h-7 rounded-full object-cover"
-                  />
-                ) : (
-                  <div
-                    className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-black text-black"
-                    style={{ background: "linear-gradient(135deg, #FFD700, #f0a500)" }}
-                  >
-                    {(clientUser.name || clientUser.displayName || "U")[0].toUpperCase()}
-                  </div>
-                )}
-                <span className="text-sm font-semibold hidden sm:inline" style={{ color: "#FFD700" }}>
-                  {(clientUser.name || clientUser.displayName || "User").split(" ")[0]}
-                </span>
-                <span className="text-gray-400 text-xs">{dropdownOpen ? "▲" : "▼"}</span>
-              </motion.button>
-
-              {/* Dropdown */}
-              <AnimatePresence>
-                {dropdownOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -8, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -8, scale: 0.95 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute left-0 mt-2 w-44 rounded-2xl overflow-hidden"
-                    style={{
-                      background: "rgba(15,15,15,0.98)",
-                      border: "1px solid rgba(255,215,0,0.15)",
-                      boxShadow: "0 10px 40px rgba(0,0,0,0.5)",
-                    }}
-                  >
-                    <Link to="/profile" onClick={() => setDropdownOpen(false)}>
-                      <motion.div
-                        whileHover={{ background: "rgba(255,215,0,0.08)" }}
-                        className="flex items-center gap-2 px-4 py-3 text-sm text-gray-300 cursor-pointer transition-all"
-                      >
-                        <span style={{ WebkitTextFillColor: 'initial', color: 'initial' }}>👤</span>
-                        <span>{t.nav.profile}</span>
-                      </motion.div>
-                    </Link>
-                    <div className="h-px mx-3" style={{ background: "rgba(255,255,255,0.06)" }} />
-                    <Link to="/my-orders" onClick={() => setDropdownOpen(false)}>
-                      <motion.div
-                        whileHover={{ background: "rgba(255,215,0,0.08)" }}
-                        className="flex items-center gap-2 px-4 py-3 text-sm text-gray-300 cursor-pointer transition-all"
-                      >
-                        <span style={{ WebkitTextFillColor: 'initial', color: 'initial' }}>📦</span>
-                        <span>{t.nav.orders}</span>
-                      </motion.div>
-                    </Link>
-                    <div className="h-px mx-3" style={{ background: "rgba(255,255,255,0.06)" }} />
-                    <motion.div
-                      whileHover={{ background: "rgba(139,0,0,0.15)" }}
-                      onClick={handleLogout}
-                      className="flex items-center gap-2 px-4 py-3 text-sm cursor-pointer transition-all"
-                      style={{ color: "#ff6b6b" }}
+          <div className="hidden sm:block">
+            {clientUser ? (
+              // ✅ لو logged in — Avatar + Dropdown
+              <div className="relative">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all"
+                  style={{ border: "1px solid rgba(255,215,0,0.25)", background: "rgba(255,215,0,0.07)" }}
+                >
+                  {/* Avatar */}
+                  {clientUser.photoURL ? (
+                    <img
+                      src={clientUser.photoURL}
+                      alt="avatar"
+                      className="w-7 h-7 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div
+                      className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-black text-black"
+                      style={{ background: "linear-gradient(135deg, #FFD700, #f0a500)" }}
                     >
-                      <span style={{ WebkitTextFillColor: 'initial', color: 'initial' }}>🚪</span>
-                      <span>{t.nav.logout}</span>
+                      {(clientUser.name || clientUser.displayName || "U")[0].toUpperCase()}
+                    </div>
+                  )}
+                  <span className="text-sm font-semibold hidden sm:inline" style={{ color: "#FFD700" }}>
+                    {(clientUser.name || clientUser.displayName || "User").split(" ")[0]}
+                  </span>
+                  <span className="text-gray-400 text-xs">{dropdownOpen ? "▲" : "▼"}</span>
+                </motion.button>
+
+                {/* Dropdown */}
+                <AnimatePresence>
+                  {dropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute left-0 mt-2 w-44 rounded-2xl overflow-hidden"
+                      style={{
+                        background: "rgba(15,15,15,0.98)",
+                        border: "1px solid rgba(255,215,0,0.15)",
+                        boxShadow: "0 10px 40px rgba(0,0,0,0.5)",
+                      }}
+                    >
+                      <Link to="/profile" onClick={() => setDropdownOpen(false)}>
+                        <motion.div
+                          whileHover={{ background: "rgba(255,215,0,0.08)" }}
+                          className="flex items-center gap-2 px-4 py-3 text-sm text-gray-300 cursor-pointer transition-all"
+                        >
+                          <span style={{ WebkitTextFillColor: 'initial', color: 'initial' }}>👤</span>
+                          <span>{t.nav.profile}</span>
+                        </motion.div>
+                      </Link>
+                      <div className="h-px mx-3" style={{ background: "rgba(255,255,255,0.06)" }} />
+                      <Link to="/my-orders" onClick={() => setDropdownOpen(false)}>
+                        <motion.div
+                          whileHover={{ background: "rgba(255,215,0,0.08)" }}
+                          className="flex items-center gap-2 px-4 py-3 text-sm text-gray-300 cursor-pointer transition-all"
+                        >
+                          <span style={{ WebkitTextFillColor: 'initial', color: 'initial' }}>📦</span>
+                          <span>{t.nav.orders}</span>
+                        </motion.div>
+                      </Link>
+                      <div className="h-px mx-3" style={{ background: "rgba(255,255,255,0.06)" }} />
+                      <motion.div
+                        whileHover={{ background: "rgba(139,0,0,0.15)" }}
+                        onClick={handleLogout}
+                        className="flex items-center gap-2 px-4 py-3 text-sm cursor-pointer transition-all"
+                        style={{ color: "#ff6b6b" }}
+                      >
+                        <span style={{ WebkitTextFillColor: 'initial', color: 'initial' }}>🚪</span>
+                        <span>{t.nav.logout}</span>
+                      </motion.div>
                     </motion.div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          ) : (
-            // ✅ لو مش logged in — زرار Login
-            <Link to="/login">
-              <motion.button
-                whileHover={{ scale: 1.05, boxShadow: "0 0 20px rgba(255,215,0,0.25)" }}
-                whileTap={{ scale: 0.95 }}
-                className="px-4 py-2 rounded-xl text-sm font-bold transition-all"
-                style={{
-                  background: "linear-gradient(135deg, #FFD700, #f0a500)",
-                  color: "#0a0a0a",
-                }}
-              >
-                {t.nav.login} <span style={{ WebkitTextFillColor: 'initial', color: 'initial' }}>👤</span>
-              </motion.button>
-            </Link>
-          )}
+                  )}
+                </AnimatePresence>
+              </div>
+            ) : (
+              // ✅ لو مش logged in — زرار Login
+              <Link to="/login">
+                <motion.button
+                  whileHover={{ scale: 1.05, boxShadow: "0 0 20px rgba(255,215,0,0.25)" }}
+                  whileTap={{ scale: 0.95 }}
+                  className="px-4 py-2 rounded-xl text-sm font-bold transition-all"
+                  style={{
+                    background: "linear-gradient(135deg, #FFD700, #f0a500)",
+                    color: "#0a0a0a",
+                  }}
+                >
+                  {t.nav.login} <span style={{ WebkitTextFillColor: 'initial', color: 'initial' }}>👤</span>
+                </motion.button>
+              </Link>
+            )}
+          </div>
 
           {/* Mobile Menu Button */}
           <button className="md:hidden text-2xl" onClick={() => setIsOpen(!isOpen)}>
@@ -234,6 +236,20 @@ const Navbar = ({ totalItems = 0, onCartClick, showOffersTab = false }) => {
             ) : (
               <NavLink to="/login" label={<><span style={{ WebkitTextFillColor: 'initial', color: 'initial' }}>👤</span> {t.nav.login}</>} mobile />
             )}
+
+            {/* Language Switcher in Mobile Drawer */}
+            <div className="border-t border-orange-500/20 mt-4 pt-4 flex items-center justify-between">
+              <span className="text-gray-300 font-semibold">{language === "ar" ? "اللغة" : "Language"}</span>
+              <motion.button
+                whileTap={{ scale: 0.96 }}
+                onClick={toggleLanguage}
+                className="flex items-center overflow-hidden rounded-full border border-orange-500/40 bg-black/30 p-0.5 text-xs font-black"
+                aria-label="Toggle language"
+              >
+                <span className={`px-2.5 py-1 rounded-full transition-all ${language === "ar" ? "bg-orange-500 text-black" : "text-gray-400"}`}>AR</span>
+                <span className={`px-2.5 py-1 rounded-full transition-all ${language === "en" ? "bg-orange-500 text-black" : "text-gray-400"}`}>EN</span>
+              </motion.button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

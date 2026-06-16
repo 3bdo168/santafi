@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Outlet } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import CartSidebar from "../components/CartSidebar";
+import ClientSpinWheel from "../components/ClientSpinWheel";
 import { useCart } from "../context/CartContext";
 import { useClientBranch } from "../context/ClientBranchContext";
 import { getOffersPageConfig } from "../services/offersPageService";
@@ -34,6 +35,7 @@ const ClientLayout = () => {
       <Navbar totalItems={totalItems} onCartClick={() => setCartOpen(true)} showOffersTab={showOffersTab} />
       <CartSidebar isOpen={cartOpen} onClose={() => setCartOpen(false)} />
       <Outlet />
+      <ClientSpinWheel />
     </div>
   );
 };

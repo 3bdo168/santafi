@@ -3,12 +3,12 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
-  collection, getDocs, serverTimestamp,
-  doc, updateDoc, increment, setDoc
+  collection, getDocs, getDoc, serverTimestamp,
+  doc, increment, runTransaction
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { useClientBranch } from "../context/ClientBranchContext";
-import { useClientAuth } from "../context/ClientAuthContext";
+import { useClientAuth } from "../context/authContext";
 import { useCart } from "../context/CartContext";
 import { calculateCartSubtotal, calculateFinalTotals } from "../utils/pricing";
 import RecommendationsPopup from "../components/RecommendationsPopup";
@@ -63,9 +63,9 @@ const Checkout = () => {
     const loadCommerceConfigs = async () => {
       if (!selectedBranch?.id) return;
       try {
-        const [branchCoupons, branchZones] = await Promise.all([
+        const [branchCoupons, branchZonesSnap] = await Promise.all([
           getDocs(collection(db, selectedBranch.id, "discountCoupons", "data")),
-          getDocs(collection(db, selectedBranch.id, "deliveryZones", "data")),
+          getDoc(doc(db, selectedBranch.id, "deliveryZones")),
         ]);
 
         const couponMap = {};
@@ -75,9 +75,11 @@ const Checkout = () => {
         });
         setAvailableCoupons(Object.values(couponMap));
 
-        const zoneMap = {};
-        branchZones.docs.forEach((d) => (zoneMap[d.id] = { id: d.id, ...d.data() }));
-        const zones = Object.values(zoneMap).filter((z) => z.active !== false);
+        const zonesData = branchZonesSnap.exists() ? branchZonesSnap.data() : {};
+        const zones = Object.entries(zonesData)
+          .filter(([, zone]) => zone && typeof zone === "object" && ("name" in zone || "fee" in zone))
+          .map(([id, zone]) => ({ id, ...zone }))
+          .filter((z) => z.active !== false);
         setAvailableZones(zones);
         if (zones.length > 0) {
           setSelectedZoneId((prev) => prev || zones[0].id);
@@ -93,6 +95,25 @@ const Checkout = () => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  const validateCouponForCheckout = (coupon) => {
+    if (!coupon || coupon.active === false) return "الكوبون غير صالح";
+
+    if (coupon.ownerUid && coupon.ownerUid !== clientUser?.uid) {
+      return "الكوبون غير صالح لهذا الحساب";
+    }
+
+    const now = new Date();
+    if (coupon.startDate && new Date(coupon.startDate) > now) return "الكوبون لم يبدأ بعد";
+    if (coupon.endDate && new Date(coupon.endDate) < now) return "الكوبون منتهي الصلاحية";
+    if (coupon.expiresAt?.toMillis && coupon.expiresAt.toMillis() < Date.now()) return "الكوبون منتهي";
+    if (coupon.usageLimit && Number(coupon.usageCount || 0) >= Number(coupon.usageLimit)) return "الكوبون استُنفد";
+    if (subtotalForThreshold < Number(coupon.minOrder || 0)) {
+      return `الحد الأدنى للكوبون ${Number(coupon.minOrder || 0).toFixed(2)} ج`;
+    }
+
+    return "";
+  };
+
   const applyCoupon = () => {
     setCouponError("");
     if (!couponCode.trim()) {
@@ -104,42 +125,17 @@ const Checkout = () => {
       (coupon) => (coupon.code || "").toUpperCase() === normalized
     );
 
-    if (!found || found.active === false) {
+    const validationError = validateCouponForCheckout(found);
+    if (validationError) {
       setAppliedCoupon(null);
-      setCouponError("الكوبون غير صالح");
-      return;
-    }
-
-    const now = new Date();
-
-    if (found.startDate && new Date(found.startDate) > now) {
-      setAppliedCoupon(null);
-      setCouponError("الكوبون لم يبدأ بعد");
-      return;
-    }
-
-    if (found.endDate && new Date(found.endDate) < now) {
-      setAppliedCoupon(null);
-      setCouponError("الكوبون منتهي الصلاحية");
-      return;
-    }
-
-    if (found.usageLimit && Number(found.usageCount || 0) >= Number(found.usageLimit)) {
-      setAppliedCoupon(null);
-      setCouponError("الكوبون استُنفد");
-      return;
-    }
-
-    if (found.expiresAt?.toMillis && found.expiresAt.toMillis() < Date.now()) {
-      setAppliedCoupon(null);
-      setCouponError("الكوبون منتهي");
+      setCouponError(validationError);
       return;
     }
 
     setAppliedCoupon(found);
   };
 
-  const buildOrderData = (extra = {}) => ({
+  const buildOrderData = (extra = {}, totalsOverride = totals, couponOverride = appliedCoupon) => ({
     name: formData.name,
     phone: formData.phone,
     address: formData.address,
@@ -154,31 +150,19 @@ const Checkout = () => {
       price_single: i.price_single,
       image: i.image || "",
     })),
-    subtotal: totals.subtotal,
-    couponCode: appliedCoupon?.code || null,
-    couponDiscount: totals.couponDiscount || 0,
+    subtotal: totalsOverride.subtotal,
+    couponCode: couponOverride?.code || null,
+    couponDiscount: totalsOverride.couponDiscount || 0,
     deliveryZoneId: selectedZone?.id || null,
     deliveryZoneName: selectedZone?.name || null,
-    deliveryFee: totals.deliveryFee || 0,
+    deliveryFee: totalsOverride.deliveryFee || 0,
     originalDeliveryFee: Number(selectedZone?.fee || 0),
-    freeDeliveryApplied: FREE_DELIVERY_THRESHOLD > 0 && subtotalForThreshold >= FREE_DELIVERY_THRESHOLD,
-    total: totals.total,
+    freeDeliveryApplied: (FREE_DELIVERY_THRESHOLD > 0 && subtotalForThreshold >= FREE_DELIVERY_THRESHOLD) || couponOverride?.type === "free_delivery",
+    total: totalsOverride.total,
     createdAt: serverTimestamp(),
     status: "pending",
     ...extra,
   });
-
-  const incrementCouponUsage = async () => {
-    if (!appliedCoupon?.code || !selectedBranch?.id) return;
-    try {
-      await updateDoc(
-        doc(db, selectedBranch.id, "discountCoupons", "data", appliedCoupon.code),
-        { usageCount: increment(1) }
-      );
-    } catch (err) {
-      console.error("Failed to increment coupon usage:", err);
-    }
-  };
 
   const saveOrder = async (extraData = {}) => {
     const branchId = selectedBranch?.id;
@@ -186,14 +170,36 @@ const Checkout = () => {
 
     const newOrderRef = doc(collection(db, branchId, "orders", "data"));
     const sharedId = newOrderRef.id;
-    const orderData = buildOrderData({ ...extraData, orderId: sharedId });
+    const couponRef = appliedCoupon?.code
+      ? doc(db, branchId, "discountCoupons", "data", appliedCoupon.code)
+      : null;
 
-    await Promise.all([
-      setDoc(newOrderRef, orderData),
-      setDoc(doc(db, "all_orders", sharedId), orderData),
-    ]);
+    await runTransaction(db, async (transaction) => {
+      let couponForOrder = appliedCoupon;
+      let totalsForOrder = totals;
 
-    await incrementCouponUsage();
+      if (couponRef) {
+        const couponSnap = await transaction.get(couponRef);
+        if (!couponSnap.exists()) throw new Error("الكوبون غير صالح");
+
+        couponForOrder = { id: couponSnap.id, ...couponSnap.data() };
+        const validationError = validateCouponForCheckout(couponForOrder);
+        if (validationError) throw new Error(validationError);
+        totalsForOrder = calculateFinalTotals({
+          cart,
+          coupon: couponForOrder,
+          deliveryFee: effectiveDeliveryFee,
+        });
+      }
+
+      const orderData = buildOrderData({ ...extraData, orderId: sharedId }, totalsForOrder, couponForOrder);
+      transaction.set(newOrderRef, orderData);
+      transaction.set(doc(db, "all_orders", sharedId), orderData);
+      if (couponRef) {
+        transaction.update(couponRef, { usageCount: increment(1), updatedAt: serverTimestamp() });
+      }
+    });
+
     return sharedId;
   };
 
@@ -211,7 +217,7 @@ const Checkout = () => {
       clearCart();
     } catch (err) {
       console.error(err);
-      alert("Failed to place order. Try again!");
+      alert(err.message || "Failed to place order. Try again!");
     } finally {
       setLoading(false);
     }
@@ -485,7 +491,12 @@ const OrderSummary = ({ cart, totals, selectedZone }) => (
     </div>
     <div className="border-t border-orange-500/20 pt-4 space-y-2">
       <div className="flex justify-between text-gray-400"><span>Subtotal</span><span>{totals.subtotal.toFixed(2)} ج</span></div>
-      <div className="flex justify-between text-gray-400"><span>Coupon</span><span className="text-green-400">- {totals.couponDiscount.toFixed(2)} ج</span></div>
+      {totals.couponDiscount > 0 && (
+        <div className="flex justify-between text-gray-400"><span>Coupon</span><span className="text-green-400">- {totals.couponDiscount.toFixed(2)} ج</span></div>
+      )}
+      {totals.deliveryDiscount > 0 && (
+        <div className="flex justify-between text-gray-400"><span>Delivery Coupon</span><span className="text-green-400">- {totals.deliveryDiscount.toFixed(2)} ج</span></div>
+      )}
       <div className="flex justify-between text-gray-400"><span>Delivery {selectedZone ? `(${selectedZone.name})` : ""}</span><span>{totals.deliveryFee.toFixed(2)} ج</span></div>
       {FREE_DELIVERY_THRESHOLD > 0 && (
         <div className="mt-3 p-3 rounded-xl border border-orange-500/20 bg-dark-800/30">
