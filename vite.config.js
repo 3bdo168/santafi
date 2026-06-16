@@ -27,6 +27,14 @@ export default defineConfig({
         }),
       }),
   ].filter(Boolean),
+  server: {
+    proxy: {
+      "/__/auth": {
+        target: "https://santafi.firebaseapp.com",
+        changeOrigin: true,
+      },
+    },
+  },
   build: {
     rollupOptions: {
       output: {

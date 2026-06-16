@@ -9,9 +9,20 @@ import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getFunctions } from "firebase/functions";
 
+const isBrowser = typeof window !== "undefined";
+const currentHost = isBrowser ? window.location.hostname : "";
+const useCurrentHostAsAuthDomain = isBrowser && (
+  currentHost === "localhost" ||
+  currentHost.endsWith(".netlify.app") ||
+  currentHost.endsWith(".web.app") ||
+  currentHost.endsWith(".firebaseapp.com")
+);
+
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "dev-api-key",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "dev.local",
+  authDomain: useCurrentHostAsAuthDomain
+    ? window.location.host
+    : (import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "dev.local"),
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "dev-project",
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "dev-project.appspot.com",
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "000000000000",
