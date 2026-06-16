@@ -15,7 +15,7 @@ const prizeTypes = {
 
 const ClientSpinWheel = () => {
   const navigate = useNavigate();
-  const { clientUser } = useClientAuth();
+  const { clientUser, clientLoading } = useClientAuth();
   const { selectedBranch } = useClientBranch();
   const [config, setConfig] = useState(null);
   const [open, setOpen] = useState(false);
@@ -26,15 +26,19 @@ const ClientSpinWheel = () => {
   const [hasSpun, setHasSpun] = useState(false);
 
   useEffect(() => {
+    if (clientLoading || !clientUser?.uid) {
+      setConfig(null);
+      return undefined;
+    }
     return onSnapshot(spinConfigRef, (snap) => {
       setConfig(snap.exists() ? normalizeSpinConfig(snap.data()) : normalizeSpinConfig());
     }, (err) => {
       console.warn("ClientSpinWheel config error (can be ignored):", err.message);
     });
-  }, []);
+  }, [clientLoading, clientUser?.uid]);
 
   useEffect(() => {
-    if (!clientUser?.uid) {
+    if (clientLoading || !clientUser?.uid) {
       setHasSpun(false);
       return undefined;
     }
@@ -43,7 +47,7 @@ const ClientSpinWheel = () => {
     }, (err) => {
       console.warn("ClientSpinWheel spinUser error (can be ignored):", err.message);
     });
-  }, [clientUser?.uid]);
+  }, [clientUser?.uid, clientLoading]);
 
   const availablePrizes = useMemo(
     () => (config?.prizes || []).filter((p) => p.enabled !== false && Number(p.weight || 0) > 0),
