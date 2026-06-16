@@ -50,7 +50,6 @@ export const ClientAuthProvider = ({ children }) => {
         const result = await getRedirectResult(auth);
         if (result?.user) {
           setClientAuthError(null);
-          await ensureClientDoc(result.user);
         }
       } catch (err) {
         console.error("Google redirect login error:", err?.code, err?.message, err);
