@@ -14,7 +14,10 @@ import { useNavigate } from "react-router-dom";
 const Menu = () => {
   const navigate = useNavigate();
   const { selectedBranch } = useClientBranch();
-  const currentBranch = selectedBranch || BRANCHES[0];
+  const currentBranch = selectedBranch?.id
+    ? selectedBranch
+    : BRANCHES.find((branch) => branch.id === selectedBranch?.id) || null;
+  const branchId = currentBranch?.id || "";
   const { addToCart } = useCart();
 
   const [toast, setToast] = useState({ show: false, message: "", type: "success" });
@@ -25,56 +28,86 @@ const Menu = () => {
   const [activeCategory, setActiveCategory] = useState("all");
 
   useEffect(() => {
-    if (!currentBranch?.id) {
+    if (!branchId) {
+      setProducts([]);
+      setCategories([]);
       setLoading(false);
       return;
     }
+
+    let cancelled = false;
 
     const fetchData = async () => {
       setLoading(true);
 
       // Prefer a valid session cache; ignore empty or corrupt payloads.
-      const cacheKey = `menu_${currentBranch.id}`;
-      const cached = sessionStorage.getItem(cacheKey);
+      const cacheKey = `menu_${branchId}`;
+      const cached = (() => {
+        try {
+          return sessionStorage.getItem(cacheKey);
+        } catch {
+          return null;
+        }
+      })();
       if (cached) {
         try {
           const { products: cachedProducts, categories: cachedCategories } = JSON.parse(cached);
           if (cachedProducts?.length > 0) {
+            if (cancelled) return;
             setProducts(cachedProducts);
-            setCategories(cachedCategories);
+            setCategories(Array.isArray(cachedCategories) ? cachedCategories : []);
             setLoading(false);
             return;
           }
-          sessionStorage.removeItem(cacheKey);
+          try {
+            sessionStorage.removeItem(cacheKey);
+          } catch {
+            // ignore storage errors
+          }
         } catch {
-          sessionStorage.removeItem(cacheKey);
+          try {
+            sessionStorage.removeItem(cacheKey);
+          } catch {
+            // ignore storage errors
+          }
         }
       }
 
       try {
-        const branchId = currentBranch.id;
         const { products: fetchedProducts, categories: fetchedCategories } =
           await getBranchMenuData(branchId);
+        if (cancelled) return;
 
         // Only persist successful non-empty responses to avoid sticky empty states.
         if (fetchedProducts.length > 0) {
-          sessionStorage.setItem(cacheKey, JSON.stringify({
-            products: fetchedProducts,
-            categories: fetchedCategories,
-          }));
+          try {
+            sessionStorage.setItem(cacheKey, JSON.stringify({
+              products: fetchedProducts,
+              categories: fetchedCategories,
+            }));
+          } catch {
+            // ignore storage errors
+          }
         }
 
         setProducts(fetchedProducts);
-        setCategories(fetchedCategories);
+        setCategories(Array.isArray(fetchedCategories) ? fetchedCategories : []);
       } catch (err) {
         console.error("Error fetching menu:", err);
+        if (!cancelled) {
+          setProducts([]);
+          setCategories([]);
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     fetchData();
-  }, [currentBranch?.id]);
+    return () => {
+      cancelled = true;
+    };
+  }, [branchId]);
 
   const handleAddToCart = (item) => {
     addToCart(item);

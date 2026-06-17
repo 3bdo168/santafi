@@ -11,6 +11,10 @@ const CouponsTab = ({ couponForm, setCouponForm, coupons, onAdd, onDelete }) => 
       return { label: "لم يبدأ بعد", color: "text-yellow-400" };
     if (coupon.endDate && new Date(coupon.endDate) < now)
       return { label: "منتهي الصلاحية", color: "text-red-400" };
+      
+    const expiresMs = coupon.expiresAt?.toMillis ? coupon.expiresAt.toMillis() : (coupon.expiresAt ? new Date(coupon.expiresAt).getTime() : null);
+    if (expiresMs && expiresMs < now.getTime())
+      return { label: "منتهي الصلاحية", color: "text-red-400" };
 
     // check usage limit
     if (coupon.usageLimit && Number(coupon.usageCount || 0) >= Number(coupon.usageLimit))
@@ -130,7 +134,7 @@ const CouponsTab = ({ couponForm, setCouponForm, coupons, onAdd, onDelete }) => 
               {coupon.source === "spinWheel" && (
                 <p className="text-xs text-yellow-400 mt-1">كوبون عجلة الحظ</p>
               )}
-              <p className="text-xs text-gray-500 mt-1">حد أدنى: {Number(coupon.minOrder || 0).toFixed(2)} ج</p>
+              <p className="text-xs text-gray-500 mt-1">حد أدنى: {Number(coupon.minOrderAmount || coupon.minOrder || 0).toFixed(2)} ج</p>
 
               {/* التواريخ */}
               {coupon.startDate && (
@@ -141,6 +145,11 @@ const CouponsTab = ({ couponForm, setCouponForm, coupons, onAdd, onDelete }) => 
               {coupon.endDate && (
                 <p className="text-xs text-gray-500 mt-1">
                   🔴 لحد: {new Date(coupon.endDate).toLocaleString("ar-EG")}
+                </p>
+              )}
+              {coupon.expiresAt && (
+                <p className={`text-xs mt-1 ${getCouponStatus(coupon).label === "منتهي الصلاحية" ? "text-red-400 font-bold" : "text-gray-500"}`}>
+                  ⏳ ينتهي: {coupon.expiresAt?.toDate ? coupon.expiresAt.toDate().toLocaleString("ar-EG") : new Date(coupon.expiresAt).toLocaleString("ar-EG")}
                 </p>
               )}
 

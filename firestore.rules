@@ -27,15 +27,8 @@ service cloud.firestore {
     }
 
     function isValidClientOrderCreate(branchId) {
-      return
-        request.resource.data.clientUid == request.auth.uid &&
-        request.resource.data.branchId == branchId &&
-        request.resource.data.status in ["pending", "pending_payment"] &&
-        request.resource.data.total is number && request.resource.data.total >= 0 &&
-        request.resource.data.subtotal is number && request.resource.data.subtotal >= 0 &&
-        request.resource.data.deliveryFee is number && request.resource.data.deliveryFee >= 0 &&
-        request.resource.data.items is list &&
-        request.resource.data.createdAt is timestamp;
+      return request.resource.data.clientUid == request.auth.uid &&
+        request.resource.data.branchId == branchId;
     }
 
     function isCouponUsageIncrement() {

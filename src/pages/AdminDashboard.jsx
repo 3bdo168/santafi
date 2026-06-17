@@ -451,7 +451,7 @@ const DashboardContent = ({ branchId }) => {
           <DeliveryZonesTab zoneForm={zoneForm} setZoneForm={setZoneForm} zones={zones} onAdd={handleAddZone} onDelete={handleDeleteZone} />
         )}
         {activeTab === "spin" && (
-          <SpinSettingsTab />
+          <SpinSettingsTab branchId={branchId} />
         )}
         {activeTab === "orders" && (
           <OrdersTab

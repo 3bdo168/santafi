@@ -9,7 +9,14 @@ const LOGO_URL =
 
 const Login = () => {
   const navigate = useNavigate();
-  const { loginWithEmail, loginWithGoogle, registerWithEmail, clientUser, clientLoading, clientAuthError } = useClientAuth();
+  const {
+    loginWithEmail,
+    loginWithGoogle,
+    registerWithEmail,
+    clientUser,
+    clientLoading = false,
+    clientAuthError,
+  } = useClientAuth() || {};
 
   const [mode, setMode] = useState("login"); // "login" | "register"
   const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "" });
@@ -28,7 +35,7 @@ const Login = () => {
       setError(`${message} (${clientAuthError.code})`);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clientAuthError?.code]);
+  }, [clientAuthError?.code, clientAuthError?.message]);
 
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -45,6 +52,9 @@ const Login = () => {
 
     setLoading(true);
     try {
+      if (!loginWithEmail || !registerWithEmail) {
+        throw new Error("auth_unavailable");
+      }
       if (mode === "login") {
         await loginWithEmail(form.email, form.password);
       } else {
@@ -52,7 +62,7 @@ const Login = () => {
       }
       navigate("/home");
     } catch (err) {
-      setError(getErrorMessage(err.code));
+      setError(getErrorMessage(err?.code) || err?.message || "حصل خطأ، حاول تاني");
     } finally {
       setLoading(false);
     }
@@ -66,6 +76,9 @@ const Login = () => {
     }
     setLoading(true);
     try {
+      if (!loginWithGoogle) {
+        throw new Error("auth_unavailable");
+      }
       const result = await loginWithGoogle();
       if (!result?.redirecting) {
         navigate("/home");

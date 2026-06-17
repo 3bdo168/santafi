@@ -7,7 +7,6 @@ import {
   getRedirectResult,
   GoogleAuthProvider,
   signInWithRedirect,
-  signInWithPopup,
   signOut,
   updateProfile,
 } from "firebase/auth";
@@ -29,12 +28,14 @@ const getDocWithRetry = async (docRef, retries = 3, delay = 250) => {
       throw err;
     }
   }
+  return null;
 };
 
 const ensureClientDoc = async (user) => {
+  if (!user?.uid) return;
   const docRef = doc(db, "clients", user.uid);
   const docSnap = await getDocWithRetry(docRef);
-  if (!docSnap.exists()) {
+  if (!docSnap?.exists()) {
     await setDoc(docRef, {
       name: user.displayName || "",
       email: user.email || "",
@@ -45,6 +46,14 @@ const ensureClientDoc = async (user) => {
   }
 };
 
+const buildClientUser = (user, data = {}) => ({
+  uid: user.uid,
+  email: user.email || "",
+  displayName: user.displayName || "",
+  photoURL: user.photoURL || "",
+  ...data,
+});
+
 export const ClientAuthProvider = ({ children }) => {
   const [clientUser, setClientUser] = useState(null);
   const [clientLoading, setClientLoading] = useState(true);
@@ -53,56 +62,53 @@ export const ClientAuthProvider = ({ children }) => {
   useEffect(() => {
     if (!hasRealFirebaseConfig) {
       setClientLoading(false);
-      return;
+      return undefined;
     }
 
-    let unsub = () => {};
     let active = true;
 
-    const initAuth = async () => {
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      if (!active) return;
+
+      if (!user) {
+        setClientUser(null);
+        setClientLoading(false);
+        return;
+      }
+
       try {
-        const result = await getRedirectResult(auth);
-        if (result?.user) {
+        await ensureClientDoc(user);
+        const docRef = doc(db, "clients", user.uid);
+        const docSnap = await getDocWithRetry(docRef);
+        if (!active) return;
+        setClientUser(buildClientUser(user, docSnap?.exists() ? docSnap.data() : {}));
+      } catch (err) {
+        console.error("ClientAuth Firestore error:", err);
+        if (!active) return;
+        setClientUser(buildClientUser(user));
+      } finally {
+        if (active) setClientLoading(false);
+      }
+    }, (err) => {
+      console.error("ClientAuth state error:", err);
+      if (!active) return;
+      setClientAuthError({ code: err?.code || "unknown", message: err?.message || "" });
+      setClientUser(null);
+      setClientLoading(false);
+    });
+
+    getRedirectResult(auth)
+      .then((result) => {
+        if (active && result?.user) {
           setClientAuthError(null);
         }
-      } catch (err) {
+      })
+      .catch((err) => {
         console.error("Google redirect login error:", err?.code, err?.message, err);
-        setClientAuthError({ code: err?.code || "unknown", message: err?.message || "" });
-      } finally {
-        if (!active) return;
-
-        unsub = onAuthStateChanged(auth, async (user) => {
-          if (user) {
-            try {
-              await ensureClientDoc(user);
-              const docRef = doc(db, "clients", user.uid);
-              const docSnap = await getDocWithRetry(docRef);
-              setClientUser({
-                uid: user.uid,
-                email: user.email,
-                displayName: user.displayName,
-                photoURL: user.photoURL,
-                ...(docSnap.exists() ? docSnap.data() : {}),
-              });
-            } catch (err) {
-              console.error("ClientAuth Firestore error:", err);
-              // ✅ fallback — نستخدم بيانات الـ Auth بس من غير Firestore
-              setClientUser({
-                uid: user.uid,
-                email: user.email,
-                displayName: user.displayName,
-                photoURL: user.photoURL,
-              });
-            }
-          } else {
-            setClientUser(null);
-          }
-          setClientLoading(false);
-        });
-      }
-    };
-
-    initAuth();
+        if (active) {
+          setClientAuthError({ code: err?.code || "unknown", message: err?.message || "" });
+        }
+      });
 
     return () => {
       active = false;

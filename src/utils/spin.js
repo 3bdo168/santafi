@@ -1,8 +1,6 @@
 import { doc } from "firebase/firestore";
 import { db } from "../firebase";
 
-export const spinConfigRef = doc(db, "spinConfig", "data");
-
 export const spinUserRef = (userId) => doc(db, "spinUsers", userId);
 
 export const todaySpinLogId = () => {

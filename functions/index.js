@@ -74,14 +74,7 @@ const todaySpinLogId = () => {
   return `${yyyy}-${mm}-${dd}`;
 };
 
-const buildSpinCouponCode = () => {
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let suffix = "";
-  for (let i = 0; i < 6; i++) {
-    suffix += alphabet[Math.floor(Math.random() * alphabet.length)];
-  }
-  return `SPIN-${suffix}`;
-};
+
 
 exports.spinWheel = onCall({ region: "europe-west1" }, async (req) => {
   if (!req.auth?.uid) throw new HttpsError("unauthenticated", "Login required");
@@ -93,92 +86,78 @@ exports.spinWheel = onCall({ region: "europe-west1" }, async (req) => {
 
   const db = getFirestore();
   const uid = req.auth.uid;
-  const configRef = db.collection("spinConfig").doc("data");
-  const logRef = db.collection("spinLogs").doc(todaySpinLogId());
-  const userSpinRef = db.collection("spinUsers").doc(uid);
+  const configRef = db.collection("wheelSettings").doc(branchId);
 
-  return db.runTransaction(async (transaction) => {
-    const [configSnap, logSnap, userSpinSnap] = await Promise.all([
-      transaction.get(configRef),
-      transaction.get(logRef),
-      transaction.get(userSpinRef),
-    ]);
+  const configSnap = await configRef.get();
+  const liveConfig = normalizeSpinConfig(configSnap.exists ? configSnap.data() : {});
+  if (!liveConfig.enabled) throw new HttpsError("failed-precondition", "disabled");
 
-    if (userSpinSnap.exists) {
-      throw new HttpsError("failed-precondition", "already_spun");
+  if (liveConfig.dailyLimit > 0) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const spinsSnap = await db.collection("wheelSpins")
+      .where("userId", "==", uid)
+      .where("branchId", "==", branchId)
+      .where("timestamp", ">=", today)
+      .get();
+
+    if (spinsSnap.size >= liveConfig.dailyLimit) {
+      throw new HttpsError("resource-exhausted", "already_spun");
     }
+  }
 
-    const liveConfig = normalizeSpinConfig(configSnap.exists ? configSnap.data() : {});
-    const logs = logSnap.exists && Array.isArray(logSnap.data()?.entries) ? logSnap.data().entries : [];
-    if (!liveConfig.enabled) throw new HttpsError("failed-precondition", "disabled");
-    if (liveConfig.dailyLimit > 0 && logs.length >= liveConfig.dailyLimit) {
-      throw new HttpsError("resource-exhausted", "daily_limit");
-    }
+  const wonPrize = pickWeightedPrize(liveConfig.prizes);
+  if (!wonPrize) throw new HttpsError("failed-precondition", "empty");
 
-    const wonPrize = pickWeightedPrize(liveConfig.prizes);
-    if (!wonPrize) throw new HttpsError("failed-precondition", "empty");
+  let code = null;
+  if (wonPrize.type !== "none" && wonPrize.couponCode && typeof wonPrize.couponCode === "string" && wonPrize.couponCode.trim() !== "") {
+    code = wonPrize.couponCode.trim().toUpperCase();
+  }
 
-    let code = wonPrize.type === "none" ? null : buildSpinCouponCode();
-    let couponRef = null;
-    if (code) {
-      let codeIsAvailable = false;
-      for (let attempt = 0; attempt < 5; attempt++) {
-        couponRef = db.collection(branchId).doc("discountCoupons").collection("data").doc(code);
-        const couponSnap = await transaction.get(couponRef);
-        if (!couponSnap.exists) {
-          codeIsAvailable = true;
-          break;
-        }
-        code = buildSpinCouponCode();
-      }
-      if (!codeIsAvailable) {
-        throw new HttpsError("aborted", "coupon_code_collision");
-      }
-    }
-    const spinEntry = {
-      userId: uid,
-      user: req.auth.token?.name || req.auth.token?.email || uid,
-      branchId,
-      prizeId: String(wonPrize.id || ""),
-      prizeLabel: String(wonPrize.label || ""),
-      prizeType: String(wonPrize.type || "none"),
-      prizeValue: Number(wonPrize.value || 0),
-      couponCode: code,
-      time: FieldValue.serverTimestamp(),
-    };
+  let couponRef = null;
+  if (code) {
+    couponRef = db.collection(branchId).doc("discountCoupons").collection("data").doc(code);
+  }
 
-    transaction.set(logRef, { entries: [...logs, spinEntry] }, { merge: true });
-    transaction.set(userSpinRef, spinEntry);
+  if (couponRef) {
+    await couponRef.set({
+      code,
+      type: wonPrize.type === "free_delivery" ? "free_delivery" : "percent",
+      value: wonPrize.type === "free_delivery" ? 0 : clamp(Number(wonPrize.value || 0), 0, 100),
+      minOrderAmount: Number(wonPrize.minOrderAmount || wonPrize.minOrder || 0) || 0,
+      active: true,
+      startDate: null,
+      endDate: null,
+      usageLimit: 1,
+      usageCount: 0,
+      source: "spinWheel",
+      ownerUid: uid,
+      spinPrizeId: String(wonPrize.id || ""),
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+      expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000),
+    });
+  }
 
-    if (couponRef) {
-      transaction.set(couponRef, {
-        code,
-        type: wonPrize.type === "free_delivery" ? "free_delivery" : "percent",
-        value: wonPrize.type === "free_delivery" ? 0 : clamp(Number(wonPrize.value || 0), 0, 100),
-        minOrder: Number(wonPrize.minOrder || 0) || 0,
-        active: true,
-        startDate: null,
-        endDate: null,
-        usageLimit: 1,
-        usageCount: 0,
-        source: "spinWheel",
-        ownerUid: uid,
-        spinPrizeId: String(wonPrize.id || ""),
-        createdAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
-      });
-    }
-
-    return {
-      prize: {
-        id: wonPrize.id || null,
-        label: wonPrize.label || "",
-        type: wonPrize.type || "none",
-        value: Number(wonPrize.value || 0),
-      },
-      couponCode: code,
-    };
+  await db.collection("wheelSpins").add({
+    userId: uid,
+    userName: req.auth.token?.name || req.auth.token?.email || uid,
+    prize: wonPrize.label || "",
+    couponCode: code,
+    timestamp: FieldValue.serverTimestamp(),
+    branchId,
   });
+
+  return {
+    prize: {
+      id: wonPrize.id || null,
+      label: wonPrize.label || "",
+      type: wonPrize.type || "none",
+      value: Number(wonPrize.value || 0),
+    },
+    couponCode: code,
+  };
 });
 
 async function getEffectiveFreeDeliveryThreshold({ db, branchId }) {

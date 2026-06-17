@@ -30,6 +30,8 @@ const Checkout = () => {
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponError, setCouponError] = useState("");
+  const [autoCouponMsg, setAutoCouponMsg] = useState("");
+  const [autoCouponWarn, setAutoCouponWarn] = useState("");
   const [selectedZoneId, setSelectedZoneId] = useState("");
   const [formData, setFormData] = useState({
     name: "", phone: "", address: "", notes: "",
@@ -90,6 +92,43 @@ const Checkout = () => {
     };
     loadCommerceConfigs();
   }, [selectedBranch?.id]);
+
+  useEffect(() => {
+    if (availableCoupons.length === 0) return;
+
+    try {
+      const raw = localStorage.getItem("pendingWheelCoupon");
+      if (!raw) return;
+      const pending = JSON.parse(raw);
+
+      if (pending.expiresAt && pending.expiresAt < Date.now()) {
+        localStorage.removeItem("pendingWheelCoupon");
+        setAutoCouponWarn("انتهت صلاحية كوبون العجلة");
+        return;
+      }
+
+      setCouponCode(pending.code);
+      const discountLabel = pending.type === "percent" ? `${pending.discount}%` : pending.type === "fixed" ? `${pending.discount} ج` : "توصيل مجاني";
+      setAutoCouponMsg(`🎉 تم تطبيق كوبون العجلة تلقائياً: ${pending.code} - خصم ${discountLabel}`);
+
+      const normalized = pending.code.trim().toUpperCase();
+      const found = availableCoupons.find((c) => (c.code || "").toUpperCase() === normalized);
+
+      if (found) {
+        const err = validateCouponForCheckout(found);
+        if (err) {
+          setCouponError(err);
+        } else {
+          setAppliedCoupon(found);
+          setCouponError("");
+        }
+      }
+
+      localStorage.removeItem("pendingWheelCoupon");
+    } catch (err) {
+      console.error("Error auto-applying coupon:", err);
+    }
+  }, [availableCoupons, subtotalForThreshold, clientUser?.uid]);
 
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -256,6 +295,16 @@ const Checkout = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-dark-900 via-dark-800 to-dark-900 py-12 px-4 md:px-8">
       <div className="max-w-5xl mx-auto">
+        {autoCouponMsg && (
+          <div className="mb-6 rounded-xl border border-green-500/30 bg-green-500/10 p-4 text-center text-sm font-bold text-green-400">
+            {autoCouponMsg}
+          </div>
+        )}
+        {autoCouponWarn && (
+          <div className="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-center text-sm font-bold text-red-400">
+            {autoCouponWarn}
+          </div>
+        )}
 
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: -30 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-12">
