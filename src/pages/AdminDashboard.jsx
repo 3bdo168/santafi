@@ -407,51 +407,7 @@ const DashboardContent = ({ branchId }) => {
               <span className="text-orange-400 text-sm font-bold">{pendingCount} انتظار</span>
             </motion.div>
           )}
-          <motion.button 
-            whileHover={{ scale: 1.05 }} 
-            whileTap={{ scale: 0.95 }} 
-            onClick={async () => {
-              try {
-                if (!window.confirm("Seed test data (explore-test-product-123 + test order)?")) return;
-                const { doc, setDoc, serverTimestamp, collection } = await import("firebase/firestore");
-                
-                // 1. Seed Product
-                await setDoc(doc(db, branchId, "products", "data", "explore-test-product-123"), {
-                  name: "explore-test-product-123",
-                  price_single: 150,
-                  price_double: 250,
-                  price_triple: 350,
-                  category: "burgers",
-                  description: "Test product for E2E",
-                  isActive: true
-                }, { merge: true });
-                
-                // 2. Seed Order
-                const orderId = "test-active-order-123";
-                const orderData = {
-                  name: "Test User",
-                  phone: "01000000000",
-                  total: 150,
-                  subtotal: 150,
-                  status: "pending",
-                  branchId,
-                  clientUid: auth.currentUser.uid,
-                  items: [{ name: "explore-test-product-123", qty: 1, price_single: 150 }],
-                  createdAt: serverTimestamp()
-                };
-                await setDoc(doc(db, branchId, "orders", "data", orderId), orderData, { merge: true });
-                await setDoc(doc(db, "all_orders", orderId), orderData, { merge: true });
-                
-                alert("Test data seeded successfully!");
-              } catch (e) {
-                console.error(e);
-                alert("Failed to seed: " + e.message);
-              }
-            }} 
-            className="px-4 py-2 border border-blue-500/40 text-blue-400 rounded-lg hover:bg-blue-500/10 transition-all text-sm font-semibold"
-          >
-            Seed Data
-          </motion.button>
+
           <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={handleLogout} className="px-4 py-2 border border-red-500/40 text-red-400 rounded-lg hover:bg-red-500/10 transition-all text-sm font-semibold">خروج</motion.button>
         </div>
       </div>
