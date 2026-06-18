@@ -77,6 +77,21 @@ export const ClientAuthProvider = ({ children }) => {
       }
 
       try {
+        // ── Check if the signed-in user is an admin/owner first ──
+        // Admin users must NOT go through ensureClientDoc — the `clients`
+        // collection write/read would be blocked by Firestore rules and
+        // cause 3× retries before the loading spinner ever clears.
+        const adminRef = doc(db, "admins", user.uid);
+        const adminSnap = await getDoc(adminRef);
+
+        if (adminSnap.exists()) {
+          // Admin / owner — just set a minimal user object and bail out early
+          if (!active) return;
+          setClientUser(buildClientUser(user, adminSnap.data()));
+          return; // finally still runs → setClientLoading(false)
+        }
+
+        // ── Regular client user ──
         await ensureClientDoc(user);
         const docRef = doc(db, "clients", user.uid);
         const docSnap = await getDocWithRetry(docRef);
