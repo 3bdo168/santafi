@@ -27,8 +27,8 @@ const RecommendationsPopup = ({ branchId, cart, onAddToCart }) => {
 
         if (filtered.length > 0) {
           setRecommendations(filtered);
-          // delay بسيط قبل ما يظهر
-          setTimeout(() => setVisible(true), 800);
+          // no artificial delay needed
+          setVisible(true);
         }
       } catch (err) {
         console.error("Failed to load recommendations:", err);

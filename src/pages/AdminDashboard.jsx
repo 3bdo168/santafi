@@ -109,9 +109,12 @@ const DashboardContent = ({ branchId }) => {
   const prevOrdersCount = useRef(null);
   const isFirstLoad     = useRef(true);
 
+  const [sensitiveModal, setSensitiveModal] = useState({ isOpen: false, label: "", resolve: null, input: "" });
+
   const confirmSensitiveAction = (actionLabel) => {
-    const value = window.prompt(`تأكيد أمان: اكتب ADMIN لتنفيذ (${actionLabel})`);
-    return value === "ADMIN";
+    return new Promise((resolve) => {
+      setSensitiveModal({ isOpen: true, label: actionLabel, resolve, input: "" });
+    });
   };
 
   const [form, setForm] = useState({
@@ -174,7 +177,7 @@ const DashboardContent = ({ branchId }) => {
   };
   const handleDeleteCategory = async (id) => {
     if (!window.confirm("هتحذف الكاتيجوري دي؟")) return;
-    if (!confirmSensitiveAction("حذف كاتيجوري")) return;
+    if (!(await confirmSensitiveAction("حذف كاتيجوري"))) return;
     await deleteDoc(doc(db, branchId, "categories", "data", id));
     fetchCategories();
   };
@@ -224,7 +227,7 @@ const DashboardContent = ({ branchId }) => {
   };
   const handleDelete = async (id) => {
     if (!window.confirm("هتحذف المنتج ده؟")) return;
-    if (!confirmSensitiveAction("حذف منتج")) return;
+    if (!(await confirmSensitiveAction("حذف منتج"))) return;
     await deleteDoc(doc(db, branchId, "products", "data", id));
     fetchProducts();
   };
@@ -232,7 +235,7 @@ const DashboardContent = ({ branchId }) => {
   // ── Order Handlers ──
   const handleDeleteOrder = async (id) => {
     if (!window.confirm("هتحذف الأوردر ده نهائياً؟")) return;
-    if (!confirmSensitiveAction("حذف أوردر")) return;
+    if (!(await confirmSensitiveAction("حذف أوردر"))) return;
     await deleteDoc(doc(db, branchId, "orders", "data", id));
   };
 
@@ -242,7 +245,7 @@ const DashboardContent = ({ branchId }) => {
     );
     if (targets.length === 0) return;
     if (!window.confirm(`هتحذف ${targets.length} أوردر منتهي نهائياً؟`)) return;
-    if (!confirmSensitiveAction("حذف كل المنتهية")) return;
+    if (!(await confirmSensitiveAction("حذف كل المنتهية"))) return;
     const batch = writeBatch(db);
     targets.forEach((o) => batch.delete(doc(db, branchId, "orders", "data", o.id)));
     await batch.commit();
@@ -250,7 +253,7 @@ const DashboardContent = ({ branchId }) => {
 
   const handleDeleteArchivedOrder = async (docId) => {
     if (!window.confirm("هتحذف الأوردر ده من الأرشيف نهائياً؟")) return;
-    if (!confirmSensitiveAction("حذف من الأرشيف")) return;
+    if (!(await confirmSensitiveAction("حذف من الأرشيف"))) return;
     await deleteDoc(doc(db, branchId, "archived_orders", "data", docId));
   };
 
@@ -265,14 +268,14 @@ const DashboardContent = ({ branchId }) => {
 
   const handleAddCoupon = async () => {
     if (!couponForm.code || (couponForm.type !== "free_delivery" && !couponForm.value)) return alert("الكود والقيمة مطلوبين");
-    const payload = { code: couponForm.code.trim().toUpperCase(), type: couponForm.type, value: couponForm.type === "free_delivery" ? 0 : Number(couponForm.value) || 0, minOrder: Number(couponForm.minOrder) || 0, active: couponForm.active, startDate: couponForm.startDate || null, endDate: couponForm.endDate || null, usageLimit: couponForm.usageLimit ? Number(couponForm.usageLimit) : null, usageCount: 0, updatedAt: serverTimestamp() };
+    const payload = { code: couponForm.code.trim().toUpperCase(), type: couponForm.type, value: couponForm.type === "free_delivery" ? 0 : Number(couponForm.value) || 0, minOrder: Number(couponForm.minOrder) || 0, active: couponForm.active, startDate: couponForm.startDate || null, endDate: couponForm.endDate || null, usageLimit: couponForm.usageLimit ? Number(couponForm.usageLimit) : null, updatedAt: serverTimestamp() };
     await setDoc(doc(db, branchId, "discountCoupons", "data", payload.code), payload, { merge: true });
     setCouponForm({ code: "", type: "percent", value: "", minOrder: "", active: true, startDate: "", endDate: "", usageLimit: "" });
-    fetchCoupons();
+    await fetchCoupons();
   };
   const handleDeleteCoupon = async (couponId) => {
     if (!window.confirm("حذف الكوبون؟")) return;
-    if (!confirmSensitiveAction("حذف كوبون")) return;
+    if (!(await confirmSensitiveAction("حذف كوبون"))) return;
     await deleteDoc(doc(db, branchId, "discountCoupons", "data", couponId));
     fetchCoupons();
   };
@@ -292,12 +295,10 @@ const DashboardContent = ({ branchId }) => {
   };
   const handleDeleteZone = async (zoneId) => {
     if (!window.confirm("حذف منطقة التوصيل؟")) return;
-    if (!confirmSensitiveAction("حذف منطقة توصيل")) return;
+    if (!(await confirmSensitiveAction("حذف منطقة توصيل"))) return;
     await updateDoc(zonesDocRef, { [zoneId]: deleteField() });
     fetchZones();
   };
-
-  // ✅ الحل: بيحدّث في الفرع + all_orders بنفس الـ ID
   const handleUpdateStatus = async (id, status) => {
     // حدّث في collection الفرع
     await updateDoc(doc(db, branchId, "orders", "data", id), { status });
@@ -579,6 +580,29 @@ const DashboardContent = ({ branchId }) => {
         onSave={handleCroppedUpload}
       />
       <OrderPrintView order={printOrder?.order} mode={printOrder?.mode} />
+
+      <AnimatePresence>
+        {sensitiveModal.isOpen && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} className="bg-dark-900 border border-orange-500/30 p-6 rounded-2xl w-full max-w-sm">
+              <h3 className="text-xl font-bold text-red-400 mb-4">تأكيد أمان</h3>
+              <p className="text-gray-300 mb-4">لتنفيذ ({sensitiveModal.label}) اكتب <strong className="text-white bg-red-500/20 px-2 py-1 rounded">ADMIN</strong> في المربع:</p>
+              <input
+                type="text"
+                autoFocus
+                value={sensitiveModal.input}
+                onChange={(e) => setSensitiveModal(s => ({ ...s, input: e.target.value }))}
+                className="w-full px-4 py-3 bg-dark-800 border border-orange-500/30 rounded-xl text-white mb-6"
+                placeholder="ADMIN"
+              />
+              <div className="flex gap-3">
+                <button onClick={() => { sensitiveModal.resolve(false); setSensitiveModal({ isOpen: false, label: "", resolve: null, input: "" }); }} className="flex-1 py-3 bg-gray-700 text-white rounded-xl font-bold hover:bg-gray-600">إلغاء</button>
+                <button onClick={() => { sensitiveModal.resolve(sensitiveModal.input === "ADMIN"); setSensitiveModal({ isOpen: false, label: "", resolve: null, input: "" }); }} className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-500">تأكيد</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

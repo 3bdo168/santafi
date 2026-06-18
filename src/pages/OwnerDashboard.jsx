@@ -692,7 +692,7 @@ const OwnerDashboard = () => {
           <div className="flex flex-col gap-6">
             <div className="bg-gray-800 rounded-2xl p-5 border border-gray-700">
               <h2 className="text-lg font-bold text-yellow-400 mb-4">
-                💳 طرق الدفع الأكثر استخداماً
+                💳 طريقة الدفع الأكثر استخداماً
               </h2>
               {Object.keys(paymentStats).length === 0 ? (
                 <p className="text-gray-500 text-center py-8">

@@ -177,7 +177,7 @@ const WeeklyReports = () => {
               {/* طرق الدفع */}
               {selected.type !== "manual" && Object.keys(selected.paymentStats || {}).length > 0 && (
                 <>
-                  <h3 className="text-gray-300 font-bold mb-3">💳 طرق الدفع</h3>
+                  <h3 className="text-gray-300 font-bold mb-3">💳 طريقة الدفع</h3>
                   <div className="flex flex-wrap gap-2">
                     {Object.entries(selected.paymentStats).sort((a, b) => b[1] - a[1]).map(([method, count]) => (
                       <span key={method} className="bg-gray-700 border border-gray-600 px-3 py-1.5 rounded-full text-sm">
