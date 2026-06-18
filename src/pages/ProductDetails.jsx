@@ -267,7 +267,7 @@ const ProductDetails = () => {
             {/* Size Selector */}
             {sizes.length > 1 && (
               <div>
-                <p className="text-gray-400 font-semibold mb-3">Choose Size:</p>
+                <p className="text-gray-400 font-semibold mb-3">الحجم:</p>
                 <div className="flex gap-3 flex-wrap">
                   {sizes.map((size) => (
                     <motion.button

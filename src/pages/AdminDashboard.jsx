@@ -399,11 +399,98 @@ const DashboardContent = ({ branchId }) => {
             </div>
           )}
           {pendingCount > 0 && (
+  const preparingCount = orders.filter((o) => o.status === "preparing").length;
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-dark-900 to-dark-800">
+      <AnimatePresence>
+        {notification && (
+          <motion.div initial={{ opacity: 0, y: -80, x: "-50%" }} animate={{ opacity: 1, y: 20, x: "-50%" }} exit={{ opacity: 0, y: -80, x: "-50%" }} className="fixed top-0 left-1/2 z-50 w-full max-w-sm">
+            <div className="mx-4 bg-dark-900 border-2 border-orange-500 rounded-2xl p-5 shadow-2xl shadow-orange-500/30">
+              <div className="flex items-start gap-3">
+                <motion.div animate={{ rotate: [0, -15, 15, -15, 15, 0] }} transition={{ duration: 0.6, repeat: 2 }} className="text-3xl">🔔</motion.div>
+                <div className="flex-1">
+                  <p className="font-black text-orange-400 text-lg">أوردر جديد!</p>
+                  <p className="text-white font-semibold">{notification.name}</p>
+                  <p className="text-gray-400 text-sm">📞 {notification.phone}</p>
+                  <p className="text-orange-400 font-bold">{notification.total?.toFixed(2)} ج</p>
+                </div>
+                <motion.button whileTap={{ scale: 0.9 }} onClick={() => setNotification(null)} className="text-gray-500 hover:text-white text-xl">✕</motion.button>
+              </div>
+              <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { setActiveTab("orders"); setNotification(null); }} className="w-full mt-3 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold rounded-xl text-sm">عرض الأوردر →</motion.button>
+              <motion.div initial={{ width: "100%" }} animate={{ width: "0%" }} transition={{ duration: 5, ease: "linear" }} className="h-1 bg-orange-500 rounded-full mt-3" />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Header */}
+      <div className="sticky top-0 z-40 glass border-b border-orange-500/20 px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">🔥</span>
+          <div>
+            <h1 className="text-xl font-black gradient-text">santafe Admin</h1>
+            <p className="text-xs text-gray-400">فرع {BRANCH_NAMES[branchId]}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          {preparingCount > 0 && (
+            <div className="flex items-center gap-2 bg-yellow-500/20 border border-yellow-500/40 px-3 py-1.5 rounded-full cursor-pointer" onClick={() => setActiveTab("orders")}>
+              <span className="w-2 h-2 bg-yellow-500 rounded-full" />
+              <span className="text-yellow-400 text-sm font-bold">{preparingCount} قيد التحضير</span>
+            </div>
+          )}
+          {pendingCount > 0 && (
             <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 2 }} className="flex items-center gap-2 bg-orange-500/20 border border-orange-500/40 px-3 py-1.5 rounded-full cursor-pointer" onClick={() => setActiveTab("orders")}>
               <span className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
               <span className="text-orange-400 text-sm font-bold">{pendingCount} انتظار</span>
             </motion.div>
           )}
+          <motion.button 
+            whileHover={{ scale: 1.05 }} 
+            whileTap={{ scale: 0.95 }} 
+            onClick={async () => {
+              try {
+                if (!window.confirm("Seed test data (explore-test-product-123 + test order)?")) return;
+                const { doc, setDoc, serverTimestamp, collection } = await import("firebase/firestore");
+                
+                // 1. Seed Product
+                await setDoc(doc(db, branchId, "products", "data", "explore-test-product-123"), {
+                  name: "explore-test-product-123",
+                  price_single: 150,
+                  price_double: 250,
+                  price_triple: 350,
+                  category: "burgers",
+                  description: "Test product for E2E",
+                  isActive: true
+                }, { merge: true });
+                
+                // 2. Seed Order
+                const orderId = "test-active-order-123";
+                const orderData = {
+                  name: "Test User",
+                  phone: "01000000000",
+                  total: 150,
+                  subtotal: 150,
+                  status: "pending",
+                  branchId,
+                  clientUid: auth.currentUser.uid,
+                  items: [{ name: "explore-test-product-123", qty: 1, price_single: 150 }],
+                  createdAt: serverTimestamp()
+                };
+                await setDoc(doc(db, branchId, "orders", "data", orderId), orderData, { merge: true });
+                await setDoc(doc(db, "all_orders", orderId), orderData, { merge: true });
+                
+                alert("Test data seeded successfully!");
+              } catch (e) {
+                console.error(e);
+                alert("Failed to seed: " + e.message);
+              }
+            }} 
+            className="px-4 py-2 border border-blue-500/40 text-blue-400 rounded-lg hover:bg-blue-500/10 transition-all text-sm font-semibold"
+          >
+            Seed Data
+          </motion.button>
           <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={handleLogout} className="px-4 py-2 border border-red-500/40 text-red-400 rounded-lg hover:bg-red-500/10 transition-all text-sm font-semibold">خروج</motion.button>
         </div>
       </div>

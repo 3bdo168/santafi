@@ -112,6 +112,7 @@ function App() {
                     <Route path="/profile" element={<Profile />} />
                     <Route path="/my-orders" element={<MyOrders />} />
                     <Route path="/checkout" element={<Checkout />} />
+                    <Route path="/cart" element={<Navigate to="/checkout" replace />} />
                     <Route path="/product/:id" element={<ProductDetails />} />
                   </Route>
                   <Route path="/404" element={<NotFound />} />
