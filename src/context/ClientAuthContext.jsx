@@ -7,6 +7,7 @@ import {
   getRedirectResult,
   GoogleAuthProvider,
   signInWithRedirect,
+  signInWithPopup,
   signOut,
   updateProfile,
 } from "firebase/auth";
@@ -36,13 +37,19 @@ const ensureClientDoc = async (user) => {
   const docRef = doc(db, "clients", user.uid);
   const docSnap = await getDocWithRetry(docRef);
   if (!docSnap?.exists()) {
-    await setDoc(docRef, {
-      name: user.displayName || "",
-      email: user.email || "",
-      phone: "",
-      address: "",
-      createdAt: serverTimestamp(),
-    });
+    try {
+      await user.getIdToken(true);
+      await setDoc(docRef, {
+        name: user.displayName || "",
+        email: user.email || "",
+        phone: "",
+        address: "",
+        createdAt: serverTimestamp(),
+      });
+    } catch (err) {
+      console.error("Failed to write client document after refresh:", err);
+      throw err;
+    }
   }
 };
 
@@ -133,6 +140,7 @@ export const ClientAuthProvider = ({ children }) => {
 
   const registerWithEmail = async (name, email, password) => {
     const result = await createUserWithEmailAndPassword(auth, email, password);
+    await result.user.getIdToken(true);
     await updateProfile(result.user, { displayName: name });
     await setDoc(doc(db, "clients", result.user.uid), {
       name,
@@ -151,8 +159,8 @@ export const ClientAuthProvider = ({ children }) => {
     try {
       setClientAuthError(null);
       setClientLoading(true);
-      await signInWithRedirect(auth, googleProvider);
-      return { redirecting: true };
+      const result = await signInWithPopup(auth, googleProvider);
+      return result;
     } catch (err) {
       setClientLoading(false);
       setClientAuthError({ code: err?.code || "unknown", message: err?.message || "" });
