@@ -13,8 +13,7 @@ const OrderCard = ({
     key={order.id}
     initial={{ opacity: 0, y: 10 }}
     animate={{ opacity: 1, y: 0 }}
-    className={`glass p-6 rounded-2xl border transition-all ${
-      order.status === "pending_payment"
+    className={`glass p-6 rounded-2xl border transition-all ${order.status === "pending_payment"
         ? "border-purple-500/40"
         : order.status === "delivered"
           ? "border-green-500/30 opacity-80"
@@ -27,7 +26,7 @@ const OrderCard = ({
                 : order.status === "preparing"
                   ? "border-yellow-500/40"
                   : "border-orange-500/20"
-    }`}
+      }`}
   >
     <div className="flex items-start justify-between mb-4">
       <div>
@@ -46,8 +45,7 @@ const OrderCard = ({
       <div className="text-right">
         <p className="text-orange-400 font-black text-xl">{order.total?.toFixed(2)} ج</p>
         <p className="text-gray-500 text-xs mt-1">{order.paymentMethod}</p>
-        <span className={`text-xs px-2 py-0.5 rounded-full mt-1 inline-block font-semibold ${
-          order.status === "pending_payment"
+        <span className={`text-xs px-2 py-0.5 rounded-full mt-1 inline-block font-semibold ${order.status === "pending_payment"
             ? "bg-purple-500/15 text-purple-300 border border-purple-500/30"
             : order.status === "delivered"
               ? "bg-green-500/20 text-green-400"
@@ -62,15 +60,15 @@ const OrderCard = ({
                       : order.status === "out_for_delivery"
                         ? "bg-purple-500/20 text-purple-400"
                         : "bg-orange-500/20 text-orange-400"
-        }`}>
+          }`}>
           {order.status === "pending_payment" ? "🔒 في انتظار الدفع"
-          : order.status === "delivered" ? "✅ تم التوصيل"
-          : order.status === "rejected" ? "❌ تم الرفض"
-          : order.status === "done" ? "✅ تم"
-          : order.status === "cancelled" ? "❌ ملغي"
-          : order.status === "preparing" ? "🔥 قيد التحضير"
-          : order.status === "out_for_delivery" ? "🛵 خرج للتوصيل"
-          : "⏳ انتظار"}
+            : order.status === "delivered" ? "✅ تم التوصيل"
+              : order.status === "rejected" ? "❌ تم الرفض"
+                : order.status === "done" ? "✅ تم"
+                  : order.status === "cancelled" ? "❌ ملغي"
+                    : order.status === "preparing" ? "🔥 قيد التحضير"
+                      : order.status === "out_for_delivery" ? "🛵 خرج للتوصيل"
+                        : "⏳ انتظار"}
         </span>
       </div>
     </div>
@@ -84,7 +82,7 @@ const OrderCard = ({
       ))}
     </div>
 
-    {/* ── Archive Actions ── */}
+
     {showActions === "archive" && order.status !== "delivered" && order.status !== "rejected" && (
       <div className="flex gap-2 flex-wrap">
         <motion.button
@@ -100,7 +98,6 @@ const OrderCard = ({
       </div>
     )}
 
-    {/* ── Orders Actions (pending / preparing / out_for_delivery) ── */}
     {showActions === true && (
       <div className="flex gap-2 flex-wrap mb-2">
         <select
@@ -125,50 +122,49 @@ const OrderCard = ({
       order.status !== "done" &&
       order.status !== "cancelled" &&
       order.status !== "rejected" && (
-      <div className="flex gap-2 flex-wrap">
-        {(order.status === "pending" || order.status === "pending_payment") && (
+        <div className="flex gap-2 flex-wrap">
+          {(order.status === "pending" || order.status === "pending_payment") && (
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => handleUpdateStatus(order.id, "preparing")}
+              className="flex-1 py-2 bg-yellow-500/20 border border-yellow-500/40 text-yellow-400 rounded-lg hover:bg-yellow-500/30 transition-all text-sm font-semibold"
+            >🔥 قيد التحضير</motion.button>
+          )}
+          {order.status === "preparing" && (
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => handleUpdateStatus(order.id, "out_for_delivery")}
+              className="flex-1 py-2 bg-purple-500/20 border border-purple-500/40 text-purple-400 rounded-lg hover:bg-purple-500/30 transition-all text-sm font-semibold"
+            >🛵 خرج للتوصيل</motion.button>
+          )}
+          {order.status === "out_for_delivery" && (
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => handleUpdateStatus(order.id, "delivered")}
+              className="flex-1 py-2 bg-green-500/20 border border-green-500/40 text-green-400 rounded-lg hover:bg-green-500/30 transition-all text-sm font-semibold"
+            >✅ تم التوصيل</motion.button>
+          )}
           <motion.button
             whileTap={{ scale: 0.95 }}
-            onClick={() => handleUpdateStatus(order.id, "preparing")}
-            className="flex-1 py-2 bg-yellow-500/20 border border-yellow-500/40 text-yellow-400 rounded-lg hover:bg-yellow-500/30 transition-all text-sm font-semibold"
-          >🔥 قيد التحضير</motion.button>
-        )}
-        {order.status === "preparing" && (
+            onClick={() => handleUpdateStatus(order.id, "cancelled")}
+            className="flex-1 py-2 bg-red-500/20 border border-red-500/40 text-red-400 rounded-lg hover:bg-red-500/30 transition-all text-sm font-semibold"
+          >❌ إلغاء</motion.button>
           <motion.button
             whileTap={{ scale: 0.95 }}
-            onClick={() => handleUpdateStatus(order.id, "out_for_delivery")}
-            className="flex-1 py-2 bg-purple-500/20 border border-purple-500/40 text-purple-400 rounded-lg hover:bg-purple-500/30 transition-all text-sm font-semibold"
-          >🛵 خرج للتوصيل</motion.button>
-        )}
-        {order.status === "out_for_delivery" && (
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            onClick={() => handleUpdateStatus(order.id, "delivered")}
-            className="flex-1 py-2 bg-green-500/20 border border-green-500/40 text-green-400 rounded-lg hover:bg-green-500/30 transition-all text-sm font-semibold"
-          >✅ تم التوصيل</motion.button>
-        )}
-        <motion.button
-          whileTap={{ scale: 0.95 }}
-          onClick={() => handleUpdateStatus(order.id, "cancelled")}
-          className="flex-1 py-2 bg-red-500/20 border border-red-500/40 text-red-400 rounded-lg hover:bg-red-500/30 transition-all text-sm font-semibold"
-        >❌ إلغاء</motion.button>
-        <motion.button
-          whileTap={{ scale: 0.95 }}
-          onClick={() => handleArchiveOrder(order)}
-          className="py-2 px-3 bg-gray-500/20 border border-gray-500/40 text-gray-400 rounded-lg hover:bg-gray-500/30 transition-all text-sm font-semibold"
-          title="أرشفة يدوية"
-        >📁</motion.button>
-        {/* ✅ حذف للأوردرات النشطة */}
-        <motion.button
-          whileTap={{ scale: 0.95 }}
-          onClick={() => handleDeleteOrder(order.id)}
-          className="py-2 px-3 bg-red-900/30 border border-red-700/50 text-red-500 rounded-lg hover:bg-red-900/50 transition-all text-sm font-semibold"
-          title="حذف نهائي"
-        >🗑️</motion.button>
-      </div>
-    )}
+            onClick={() => handleArchiveOrder(order)}
+            className="py-2 px-3 bg-gray-500/20 border border-gray-500/40 text-gray-400 rounded-lg hover:bg-gray-500/30 transition-all text-sm font-semibold"
+            title="أرشفة يدوية"
+          >📁</motion.button>
 
-    {/* ✅ حذف للـ done و cancelled */}
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={() => handleDeleteOrder(order.id)}
+            className="py-2 px-3 bg-red-900/30 border border-red-700/50 text-red-500 rounded-lg hover:bg-red-900/50 transition-all text-sm font-semibold"
+            title="حذف نهائي"
+          >🗑️</motion.button>
+        </div>
+      )}
+
     {showActions === true && (order.status === "delivered" || order.status === "done" || order.status === "cancelled" || order.status === "rejected") && (
       <motion.button
         whileTap={{ scale: 0.95 }}

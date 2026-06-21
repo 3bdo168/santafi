@@ -231,6 +231,34 @@ const ClientSpinWheel = () => {
       return;
     }
 
+    const todayKey = `wheelSpun_${clientUser.uid}_${selectedBranch.id}_${new Date().toDateString()}`;
+    if (localStorage.getItem(todayKey)) {
+      setMessage("استنفذت لفاتك النهارده 🎡");
+      return;
+    }
+
+    // Eligibility check FIRST, before any UI changes
+    try {
+      if (config.dailyLimit > 0) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const spinsSnap = await getDocs(query(
+          collection(db, "wheelSpins"),
+          where("userId", "==", clientUser.uid),
+          where("branchId", "==", selectedBranch.id),
+          where("timestamp", ">=", today)
+        ));
+        if (spinsSnap.size >= config.dailyLimit) {
+          setMessage("استنفذت لفاتك النهارده");
+          return;
+        }
+      }
+    } catch {
+      setMessage("حدث خطأ في التحقق، حاول مرة أخرى");
+      return;
+    }
+
+    // Only AFTER check passes → start UI
     setSpinning(true);
     setResult(null);
     setCouponCode("");
@@ -239,25 +267,6 @@ const ClientSpinWheel = () => {
     startTicking();
 
     try {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      if (config.dailyLimit > 0) {
-        const spinsQuery = query(
-          collection(db, "wheelSpins"),
-          where("userId", "==", clientUser.uid),
-          where("branchId", "==", selectedBranch.id),
-          where("timestamp", ">=", today)
-        );
-        const spinsSnap = await getDocs(spinsQuery);
-        if (spinsSnap.size >= config.dailyLimit) {
-          setMessage("استنفذت لفاتك النهارده");
-          setSpinning(false);
-          stopTicking();
-          return;
-        }
-      }
-
       const prize = pickWeightedPrize(config.prizes);
       if (!prize) {
         throw new Error("لا توجد جوائز متاحة");
@@ -293,6 +302,8 @@ const ClientSpinWheel = () => {
         timestamp: serverTimestamp(),
         branchId: selectedBranch.id,
       });
+
+      localStorage.setItem(todayKey, "1");
 
       landOnPrize(prize, wonCouponCode, expiresAtMillis);
     } catch (err) {

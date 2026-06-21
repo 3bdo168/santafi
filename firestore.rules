@@ -103,17 +103,11 @@ service cloud.firestore {
       allow write: if isAdminOrOwner();
     }
 
-    // ✅ عجلة الحظ — كانت ناقصة من الـ rules القديمة
+
     match /spinConfig/{docId} {
       allow read: if true;
       allow write: if isAdminOrOwner();
     }
-
-    match /wheelSettings/{docId} {
-      allow read: if true;
-      allow write: if isAdminOrOwner();
-    }
-
 
     match /spinLogs/{dateId} {
       allow read: if isSignedIn();

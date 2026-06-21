@@ -1,11 +1,3 @@
-// functions/index.js
-// ==========================================
-// تثبيت:
-//   cd functions
-//   npm install firebase-admin firebase-functions
-//   firebase deploy --only functions
-// ==========================================
-
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { initializeApp } = require("firebase-admin/app");
@@ -368,7 +360,7 @@ exports.createOrder = onCall({ region: "europe-west1" }, async (req) => {
     try {
       await db.collection(branchId).doc("discountCoupons").collection("data").doc(appliedCouponCode)
         .set({ usageCount: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-    } catch (e) {}
+    } catch (e) { }
   }
 
   return { ok: true, orderId, total, deliveryFee, freeDeliveryApplied };

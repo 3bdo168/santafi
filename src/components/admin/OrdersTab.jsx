@@ -8,7 +8,6 @@ const OrdersTab = ({ orders, handleUpdateStatus, handleArchiveOrder, handleDelet
 
   return (
     <div className="space-y-4">
-      {/* ✅ زرار حذف الكل */}
       {doneCount > 0 && (
         <div className="flex justify-end">
           <motion.button

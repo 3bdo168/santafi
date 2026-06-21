@@ -92,10 +92,10 @@ const Navbar = ({ totalItems = 0, onCartClick, showOffersTab = false }) => {
             )}
           </motion.button>
 
-          {/* Auth Section */}
+
           <div className="hidden sm:block">
             {clientUser ? (
-              // ✅ لو logged in — Avatar + Dropdown
+
               <div className="relative">
                 <motion.button
                   whileHover={{ scale: 1.05 }}
@@ -125,7 +125,7 @@ const Navbar = ({ totalItems = 0, onCartClick, showOffersTab = false }) => {
                   <span className="text-gray-400 text-xs">{dropdownOpen ? "▲" : "▼"}</span>
                 </motion.button>
 
-                {/* Dropdown */}
+
                 <AnimatePresence>
                   {dropdownOpen && (
                     <motion.div
@@ -174,7 +174,7 @@ const Navbar = ({ totalItems = 0, onCartClick, showOffersTab = false }) => {
                 </AnimatePresence>
               </div>
             ) : (
-              // ✅ لو مش logged in — زرار Login
+
               <Link to="/login">
                 <motion.button
                   whileHover={{ scale: 1.05, boxShadow: "0 0 20px rgba(255,215,0,0.25)" }}
@@ -191,7 +191,6 @@ const Navbar = ({ totalItems = 0, onCartClick, showOffersTab = false }) => {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
           <button className="md:hidden text-2xl" onClick={() => setIsOpen(!isOpen)}>
             {isOpen ? "✕" : "☰"}
           </button>
@@ -262,9 +261,8 @@ const NavLink = ({ to, label, mobile = false }) => (
     <motion.div
       whileHover={{ color: "#dc2626" }}
       whileTap={{ scale: 0.95 }}
-      className={`font-semibold text-gray-300 hover:text-orange-400 transition-colors ${
-        mobile ? "block py-2" : ""
-      }`}
+      className={`font-semibold text-gray-300 hover:text-orange-400 transition-colors ${mobile ? "block py-2" : ""
+        }`}
     >
       {label}
     </motion.div>
